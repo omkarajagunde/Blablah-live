@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "Blablah chat: Realtime live chat on every internet url",
+  "version": "1.0",
+  "description": "Realtime live chat on every internet url",
+  "icons": {
+    "16": "vite.svg",
+    "48": "vite.svg",
+    "128": "vite.svg"
+  },
+  "background": {
+    "service_worker": "service-worker.js"
+  },
+  "action": {
+    "default_title": "Click to open panel"
+  },
+  "side_panel": {
+    "default_path": "index.html"
+  },
+  "permissions": ["sidePanel", "tabs", "activeTab"]
+}
