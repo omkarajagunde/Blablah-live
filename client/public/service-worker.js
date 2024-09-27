@@ -1,24 +1,110 @@
 var onTabActivatedInterval = null;
+var panelClosedCalled = false;
+var socket = null;
+var activeTabId = null;
 
-chrome.runtime.onInstalled.addListener(() => {
-	chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
+function deepParse(obj) {
+	if (typeof obj === "string") {
+		try {
+			// Try to parse the string as JSON
+			const parsed = JSON.parse(obj);
+			// Recursively parse the parsed object in case there are nested strings to parse
+			return deepParse(parsed);
+		} catch (e) {
+			// If parsing fails, return the string as it is
+			return obj;
+		}
+	} else if (typeof obj === "object" && obj !== null) {
+		// Recursively process each key in the object or array
+		for (const key in obj) {
+			if (obj.hasOwnProperty(key)) {
+				obj[key] = deepParse(obj[key]);
+			}
+		}
+	}
+	return obj;
+}
+
+function openWebSocket(user_id) {
+	if (!socket) {
+		socket = new WebSocket(`ws://localhost/receive/${user_id}`);
+	}
+
+	socket.onopen = function (event) {
+		console.log("WebSocket connection opened");
+	};
+
+	socket.onmessage = function (event) {
+		// Broadcast to other parts of the extension
+		chrome.runtime.sendMessage({ action: "WS_MESSAGE", data: deepParse(event.data) });
+	};
+
+	socket.onerror = function (error) {
+		console.error("WebSocket error:", error);
+	};
+
+	socket.onclose = function (event) {
+		console.log("WebSocket closed. Reconnecting...", event);
+		setTimeout(() => {
+			openWebSocket(user_id);
+		}, 5000); // Attempt to reconnect after 5 seconds
+	};
+}
+
+chrome.runtime.onConnect.addListener((port) => {
+	console.log("Port connected with name:", port.name);
+
+	if (port.name === "mySidePanel") {
+		panelClosedCalled = false;
+		console.log("Side panel opened");
+
+		port.onDisconnect.addListener(() => {
+			console.log("Side panel closed");
+
+			if (!panelClosedCalled) {
+				panelClosedCalled = true;
+				chrome.storage.local.get(["user_id"], (result) => {
+					fetch("http://localhost/update/user?IsOnline=false", {
+						method: "POST",
+						headers: { "X-Id": result["user_id"] }
+					})
+						.then((response) => {
+							if (!response.ok) {
+								throw new Error(`Network response was not ok: ${response.statusText}`);
+							}
+							return response.json(); // Or handle the response as needed
+						})
+						.then((data) => {
+							console.log("Fetch successful: ", data);
+						})
+						.catch((error) => {
+							console.error("Fetch failed: ", error);
+						});
+				});
+			}
+		});
+	}
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-	console.log("UPDATE_URL_ACK -- ", onTabActivatedInterval);
+	if (message.action === "APP_READY_TO_RECEIVE_EVENT") {
+		console.log("App ready");
+		updateTabUrl();
+	}
 
-	if (message.action === "UPDATE_URL_ACK") {
-		clearInterval(onTabActivatedInterval);
-		return true; // Indicate that the response will be sent asynchronously
+	if (message.action === "START_WS_SESSION") {
+		chrome.storage.local.get(["user_id"], (result) => {
+			openWebSocket(result["user_id"]);
+		});
 	}
 });
 
 // Function to get the current active tab's URL
-function updateTabUrl(tabId) {
-	chrome.tabs.get(tabId, (tab) => {
+function updateTabUrl() {
+	chrome.tabs.get(activeTabId, (tab) => {
 		if (tab && tab.url) {
 			// Broadcast the updated URL to the side panel
-			chrome.runtime.sendMessage({ action: "updateURL", url: tab.url });
+			chrome.runtime.sendMessage({ action: "UPDATE_URL", url: tab.url });
 		}
 	});
 }
@@ -26,12 +112,8 @@ function updateTabUrl(tabId) {
 // Listen for tab activation (when the user switches tabs)
 chrome.tabs.onActivated.addListener((activeInfo) => {
 	// Get the newly active tab's ID and update the URL
-	console.log("Interval created - ");
-
-	onTabActivatedInterval = setInterval(() => {
-		console.log("Interval counter - ", onTabActivatedInterval);
-		updateTabUrl(activeInfo.tabId);
-	}, 200);
+	activeTabId = activeInfo.tabId;
+	updateTabUrl();
 });
 
 // Listen for tab URL updates (when the user navigates within a tab)
@@ -43,6 +125,10 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 	 */
 	if (changeInfo.url) {
 		// If the URL changes, update the side panel with the new URL
-		chrome.runtime.sendMessage({ action: "updateURL", url: changeInfo.url });
+		chrome.runtime.sendMessage({ action: "UPDATE_URL", url: changeInfo.url });
 	}
+});
+
+chrome.runtime.onInstalled.addListener(() => {
+	chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
 });
