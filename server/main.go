@@ -41,6 +41,6 @@ func main() {
 	api.SetupRoutes(app)
 
 	PORT := os.Getenv("PORT")
-	log.Fatal(app.Listen(PORT))
+	log.Fatal(app.Listen(":" + PORT))
 
 }
