@@ -26,7 +26,7 @@ WORKDIR /root/
 COPY --from=builder /app/app .
 
 # Step 10: Expose port 8000 to access the HTTP server
-EXPOSE 8000
+EXPOSE 3000
 
 # Step 11: Set the binary as the entrypoint to be run when the container starts
 CMD ["./app"]
