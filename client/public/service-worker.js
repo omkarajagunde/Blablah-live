@@ -27,7 +27,7 @@ function deepParse(obj) {
 
 function openWebSocket(user_id) {
 	if (!socket) {
-		socket = new WebSocket(`ws://localhost/receive/${user_id}`);
+		socket = new WebSocket(`ws://localhost:3000/receive/${user_id}`);
 	}
 
 	socket.onopen = function (event) {
@@ -64,7 +64,7 @@ chrome.runtime.onConnect.addListener((port) => {
 			if (!panelClosedCalled) {
 				panelClosedCalled = true;
 				chrome.storage.local.get(["user_id"], (result) => {
-					fetch("http://localhost/update/user?IsOnline=false", {
+					fetch("http://localhost:3000/update/user?IsOnline=false", {
 						method: "POST",
 						headers: { "X-Id": result["user_id"] }
 					})

@@ -145,13 +145,18 @@ export function ChatInterface({
 				let messageObj = {
 					Timestamp: new Date().toISOString(),
 					// @ts-ignore
-					From: { Id: String(userId), Avatar: myProfile["Avatar"], Username: myProfile["Username"] },
+					From: { Id: String(userId), Username: myProfile["Username"] },
 					To: "",
 					Reactions: {},
 					Flagged: [],
-					Message: message
+					Message: message,
+					ChannelId: currentURL
 				};
-				let response = await axios.post(`http://localhost/send?SiteId=${currentURL}`, { ...messageObj }, { headers });
+				let response = await axios.post(
+					`http://localhost:3000/send?SiteId=${currentURL}`,
+					{ ...messageObj },
+					{ headers }
+				);
 				setChat([...chat, { MsgId: response.data.MsgId, Values: messageObj }]);
 				if (textareaRef.current) {
 					textareaRef.current.value = "";
@@ -304,7 +309,7 @@ export function ChatInterface({
 										>
 											<div
 												className="w-10 h-10 rounded-full bg-muted"
-												dangerouslySetInnerHTML={{ __html: msg.Values.From.Avatar }}
+												//dangerouslySetInnerHTML={{ __html: msg.Values.From.Avatar }}
 											></div>
 											<div className="flex-1">
 												<div className="rounded-lg">

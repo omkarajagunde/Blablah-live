@@ -5,6 +5,7 @@ import (
 	"os"
 	"server/api"
 	"server/db"
+	"server/models"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -27,7 +28,14 @@ func main() {
 	}))
 
 	// Connect redis DB
-	db.Init()
+	db.RedisInit()
+
+	// Connect Mongo DB
+	messageCollection, ctx := db.MongoInit("messages")
+	models.CreateMessageService(messageCollection, ctx)
+
+	usersCollection, ctx := db.MongoInit("users")
+	models.CreateUserService(usersCollection, ctx)
 
 	app.Use(requestid.New())
 

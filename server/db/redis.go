@@ -4,18 +4,12 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"server/utils"
 	"sync"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/gofiber/fiber/v2/log"
 	"github.com/gofiber/websocket/v2"
 )
-
-type Stream struct {
-	StreamName string
-	MsgChannel chan MessageModel
-}
 
 // Message representation
 type MessageModel struct {
@@ -40,7 +34,7 @@ var (
 	mutex  sync.Mutex
 )
 
-func Init() bool {
+func RedisInit() bool {
 
 	// Parse the Redis URL and connect
 	options, parseErr := redis.ParseURL(os.Getenv("REDIS_URL"))
@@ -118,31 +112,6 @@ func StreamExists(siteId string) bool {
 	}
 	fmt.Printf("Stream %s exists\n", siteId)
 	return true
-}
-
-func WriteMessageToStream(stream *Stream, wg *sync.WaitGroup, resultChan chan string) {
-	defer wg.Done()
-
-	for message := range (*stream).MsgChannel {
-
-		msg, convertError := utils.StructToRedisMap(message)
-		if convertError != nil {
-			log.Error("%s", convertError)
-			return
-		}
-
-		msgId, streamErr := client.XAdd(ctx, &redis.XAddArgs{
-			Stream: (*stream).StreamName,
-			Values: msg,
-		}).Result()
-
-		if streamErr != nil {
-			log.Error("%s", streamErr)
-		}
-
-		resultChan <- msgId
-		log.Info("Msg written to stream:", stream.StreamName, " with MsgId:", msgId)
-	}
 }
 
 func StartStreamConsumer(streamName string, user *UserSocket) {

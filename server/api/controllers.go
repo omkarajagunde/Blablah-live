@@ -9,14 +9,14 @@ import (
 
 	"server/db"
 	"server/models"
-	"server/utils"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/log"
 	"github.com/gofiber/websocket/v2"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
-var streams = map[string]db.Stream{}
+var channels map[string]bool
 var wg sync.WaitGroup
 
 // ChatController implements the Controllers interface
@@ -29,7 +29,7 @@ func (c *ChatController) Ws(conn *websocket.Conn) {
 	// Extract userId from query parameters
 	userId := conn.Params("id")
 	if userId != "" {
-		user, isErr := db.Get("users:" + userId)
+		user, isErr := models.GetUser(userId)
 		if isErr {
 			conn.WriteControl(
 				websocket.CloseMessage,
@@ -48,8 +48,12 @@ func (c *ChatController) Ws(conn *websocket.Conn) {
 
 		log.Info("User connected - ", userId)
 
-		if activeSiteId, ok := user["ActiveSite"]; ok {
-			go db.StartStreamConsumer(activeSiteId.(string), connections[userId])
+		if user != nil && user.ActiveSite != "" {
+			_, ok := channels[user.ActiveSite]
+			if !ok {
+				go models.ListenChannel(user.ActiveSite)
+				channels[user.ActiveSite] = true
+			}
 		}
 
 		for {
@@ -60,7 +64,7 @@ func (c *ChatController) Ws(conn *websocket.Conn) {
 // SendMessage handles sending messages
 func (c *ChatController) SendMessage(ctx *fiber.Ctx) error {
 
-	var message db.MessageModel
+	var message models.MessageModel
 	var userId string = ctx.Get("X-Id")
 	var siteId string = ctx.Query("SiteId")
 
@@ -71,7 +75,7 @@ func (c *ChatController) SendMessage(ctx *fiber.Ctx) error {
 		})
 	}
 
-	user, isErr := db.Get("users:" + userId)
+	user, isErr := models.GetUser(userId)
 	if isErr {
 		return ctx.Status(500).JSON(fiber.Map{
 			"status":  500,
@@ -80,9 +84,12 @@ func (c *ChatController) SendMessage(ctx *fiber.Ctx) error {
 		})
 	}
 
-	user["ModifiedAt"] = time.Now()
-	if userActiveSite, ok := user["ActiveSite"]; ok {
-		if userActiveSite != siteId {
+	if user != nil {
+		user.ModifiedAt = time.Now()
+	}
+
+	if user != nil && user.ActiveSite != "" {
+		if user.ActiveSite != siteId {
 			return ctx.Status(500).JSON(fiber.Map{
 				"status":  500,
 				"message": "User is not active on this channel, not allowed to send message",
@@ -101,49 +108,12 @@ func (c *ChatController) SendMessage(ctx *fiber.Ctx) error {
 		})
 	}
 
-	/*
-		Check if stream already present for given site?
-		If yes then send message to existing routine working
-		on behalf of that site.
-	*/
-
-	resultChan := make(chan string)
-
-	if stream, ok := streams[siteId]; ok {
-		stream.MsgChannel <- message
-		return ctx.Status(200).JSON(fiber.Map{
-			"message": "Message sent successfully",
-			"status":  200,
-			"MsgId":   <-resultChan,
-		})
-	}
-
-	/*
-		Create new Site stream
-	*/
-	newSiteStream := &db.Stream{
-		StreamName: siteId,
-		MsgChannel: make(chan db.MessageModel),
-	}
-
-	streams[siteId] = *newSiteStream
-	wg.Add(1)
-
-	/*
-		Create routine that will act on behalf of this new site
-	*/
-
-	// defer func() {
-	// 	close(resultChan)
-	// }()
-
-	go db.WriteMessageToStream(newSiteStream, &wg, resultChan)
-	streams[siteId].MsgChannel <- message
+	msgId := models.WriteMessageToChannel(message)
 
 	return ctx.Status(200).JSON(fiber.Map{
 		"message": "Message sent successfully",
 		"status":  200,
-		"MsgId":   <-resultChan,
+		"MsgId":   msgId,
 	})
 
 }
@@ -176,7 +146,7 @@ func (c *ChatController) ReportMessage(ctx *fiber.Ctx) error {
 func (c *ChatController) RegisterUser(ctx *fiber.Ctx) error {
 	userId := ctx.Get("X-Id")
 	if userId != "" {
-		_, isErr := db.Get("users:" + userId)
+		_, isErr := models.GetUser(userId)
 		if isErr {
 			return ctx.Status(500).JSON(fiber.Map{
 				"status":  500,
@@ -215,10 +185,28 @@ func (c *ChatController) RegisterUser(ctx *fiber.Ctx) error {
 
 }
 
+// ConvertUserToBsonM converts a UserModel struct to bson.M
+func convert_UserToBsonM(user models.UserModel) (bson.M, error) {
+	// Step 1: Marshal the UserModel struct into BSON
+	userBson, err := bson.Marshal(user)
+	if err != nil {
+		return nil, err
+	}
+
+	// Step 2: Unmarshal the BSON into bson.M
+	var userMap bson.M
+	err = bson.Unmarshal(userBson, &userMap)
+	if err != nil {
+		return nil, err
+	}
+
+	return userMap, nil
+}
+
 func (c *ChatController) UpdateUser(ctx *fiber.Ctx) error {
 	userId := ctx.Get("X-Id")
 	if userId != "" {
-		user, isErr := db.Get("users:" + userId)
+		user, isErr := models.GetUser(userId)
 		if isErr {
 			return ctx.Status(400).JSON(fiber.Map{
 				"status":  400,
@@ -228,28 +216,29 @@ func (c *ChatController) UpdateUser(ctx *fiber.Ctx) error {
 
 		siteId := ctx.Query("SiteId", "USER_NOT_IN_PLUGIN")
 		isOnline := ctx.Query("IsOnline", "false")
-		user["ModifiedAt"] = time.Now()
 
-		if val, err := strconv.ParseBool(isOnline); err == nil {
-			log.Debug("IsOnline - ", val)
-			if val {
-				user["IsOnline"] = true
-				user["ActiveSite"] = siteId
+		if user != nil {
+			user.ModifiedAt = time.Now()
+			if val, err := strconv.ParseBool(isOnline); err == nil {
+				log.Debug("IsOnline - ", val)
+				if val {
+					user.IsOnline = true
+					user.ActiveSite = siteId
 
-				userConn, ok := connections[userId]
-				if ok {
-					//userConn.LastStreamQuit <- true
-					go db.StartStreamConsumer(siteId, userConn)
+					_, ok := channels[user.ActiveSite]
+					if !ok {
+						go models.ListenChannel(user.ActiveSite)
+						channels[user.ActiveSite] = true
+					}
+
+				} else {
+					user.IsOnline = false
 				}
-
-			} else {
-				user["IsOnline"] = false
 			}
-		}
 
-		if array, ok := utils.Convert_StringToSlice(user, "ExploredSites"); ok {
+			array := []string{}
 			flag := false
-			for _, site := range array {
+			for _, site := range user.ExploredSites {
 				if site == siteId {
 					flag = true
 				}
@@ -257,24 +246,29 @@ func (c *ChatController) UpdateUser(ctx *fiber.Ctx) error {
 
 			if !flag {
 				array = append(array, siteId)
-				user["ExploredSites"] = utils.Convert_SliceToString(array)
+				user.ExploredSites = array
 			}
-		}
 
-		err := models.UpdateUser(userId, user)
+			userMap, convertErr := convert_UserToBsonM(*user)
+			if convertErr != nil {
+				log.Fatal("Failed to convert UserModel to bson.M:", convertErr)
+			}
 
-		if err != nil {
-			log.Debug(err)
-			return ctx.Status(500).JSON(fiber.Map{
-				"status":  500,
-				"message": err,
+			err := models.UpdateUser(userId, userMap)
+
+			if err != nil {
+				log.Debug(err)
+				return ctx.Status(500).JSON(fiber.Map{
+					"status":  500,
+					"message": err,
+				})
+			}
+
+			return ctx.Status(200).JSON(fiber.Map{
+				"status":  200,
+				"message": "User updated successfully...",
 			})
 		}
-
-		return ctx.Status(200).JSON(fiber.Map{
-			"status":  200,
-			"message": "User updated successfully...",
-		})
 
 	}
 

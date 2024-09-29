@@ -1,6 +1,7 @@
 package models
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,9 +12,10 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/log"
 	"github.com/google/uuid"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 
 	C "server/constants"
-	"server/db"
 	"server/utils"
 )
 
@@ -25,23 +27,35 @@ type Flagged struct {
 
 // User data representation
 type UserModel struct {
-	Id            string
-	Username      string
-	Avatar        string
-	Ip            string
-	IsOnline      bool
-	ExploredSites []string
-	ActiveSite    string
-	Flagged       []Flagged
-	IsLoggedIn    bool
-	LoginMethod   string // <custom, google>,
-	IsBanned      bool
-	CreatedAt     time.Time
-	ModifiedAt    time.Time
-	City          string
-	Country       string
-	Region        string
-	Coords        string
+	Id string `bson:"_id"`
+
+	Username      string    `bson:"username"`
+	Avatar        string    `bson:"avatar"`
+	Ip            string    `bson:"ip"`
+	IsOnline      bool      `bson:"is_online"`
+	ExploredSites []string  `bson:"explored_sites"`
+	ActiveSite    string    `bson:"active_site"`
+	Flagged       []Flagged `bson:"flagged"`
+	IsLoggedIn    bool      `bson:"is_logged_in"`
+	LoginMethod   string    `bson:"login_method"` // <custom, google>,
+	IsBanned      bool      `bson:"is_banned"`
+	CreatedAt     time.Time `bson:"created_at"`
+	ModifiedAt    time.Time `bson:"modified_at"`
+	City          string    `bson:"city"`
+	Country       string    `bson:"country"`
+	Region        string    `bson:"region"`
+	Coords        string    `bson:"coords"`
+}
+
+type UserService struct {
+	Collection *mongo.Collection
+	ctx        context.Context
+}
+
+var userService UserService
+
+func CreateUserService(collection *mongo.Collection, ctx context.Context) {
+	userService = UserService{Collection: collection, ctx: ctx}
 }
 
 func get(tag string, url string, result chan map[string]string) {
@@ -117,42 +131,47 @@ func NewUser(ctx *fiber.Ctx) (*UserModel, bool) {
 		Coords:        utils.GetJSONValue(ipinfoMap.(map[string]interface{}), "loc"),
 	}
 
-	mp, _ := utils.StructToRedisMap(*user)
-	ok, err := db.Set("users:"+userId, mp)
-	if ok {
-		log.Info("New user added to redis by id: ", userId)
-		return user, true
-	} else {
+	_, insertError := userService.Collection.InsertOne(userService.ctx, user)
+	if insertError != nil {
 		log.Error("Error while creating new user in redis: ", err)
 		return nil, false
 	}
+	log.Info("New user added to redis by id: ", userId)
+	return user, true
+
 }
 
-func GetUser(userId string) (map[string]interface{}, bool) {
-	result, err := db.Get("users:" + userId)
-	if err {
-		log.Error(err)
+func GetUser(userId string) (*UserModel, bool) {
+
+	filter := bson.M{"_id": userId}
+
+	var user UserModel
+	err := userService.Collection.FindOne(userService.ctx, filter).Decode(&user)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			log.Error("no user found with id:", userId)
+		} else {
+			log.Error(err)
+		}
+
 		return nil, true
 	}
 
-	// No records found as empty map is retrieved
-	if len(result) == 0 {
-		return nil, true
-	}
+	return &user, false
 
-	return result, false
 }
 
-func UpdateUser(userId string, mp map[string]interface{}) error {
-	hash := "users:" + userId
-	present := db.Exists(hash)
-	if !present {
-		return fmt.Errorf("%s user not found ", userId)
+func UpdateUser(userId string, mp bson.M) error {
+
+	filter := bson.M{"_id": userId}
+	update := bson.M{
+		"$set": mp,
 	}
-	ok, err := db.Set(hash, mp)
-	if ok {
-		return nil
-	} else {
-		return fmt.Errorf("%s", err)
+
+	_, err := userService.Collection.UpdateOne(userService.ctx, filter, update)
+	if err != nil {
+		return fmt.Errorf("UpdateOneErr: %s :: %s", userId, err)
 	}
+	return nil
+
 }

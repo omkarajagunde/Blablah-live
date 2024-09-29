@@ -69,11 +69,11 @@ function App() {
 			if (userId) {
 				// @ts-ignore
 				headers["X-Id"] = userId;
-				await axios.post(`http://localhost/update/user?IsOnline=true&SiteId=${url}`, {}, { headers });
+				await axios.post(`http://localhost:3000/update/user?IsOnline=true&SiteId=${url}`, {}, { headers });
 			}
 
 			if (!userId) {
-				let response = await axios.post(`http://localhost/register?SiteId=${url}`);
+				let response = await axios.post(`http://localhost:3000/register?SiteId=${url}`);
 				setItemInChromeStorage("user_id", response.data.id);
 				setItemInChromeStorage("profile", JSON.parse(response.data.data));
 				// Create new socket connection...
@@ -89,7 +89,7 @@ function App() {
 	const getOldMessages = async (url: string) => {
 		// Get messages
 		axios
-			.get(`http://localhost/messages?SiteId=${url}&limit=50`)
+			.get(`http://localhost:3000/messages?SiteId=${url}&limit=50`)
 			.then((resp) => {
 				console.log("resp - ", JSON.parse(resp.data.data));
 			})
