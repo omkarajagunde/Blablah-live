@@ -22,6 +22,7 @@ func MongoInit(colName string) (*mongo.Collection, context.Context) {
 		return db.Collection(colName), mongoCtx
 	}
 
+	log.Info("MONGO_URL - ", os.Getenv("MONGO_URL"))
 	clientOptions := options.Client().ApplyURI(os.Getenv("MONGO_URL"))
 	client, err := mongo.Connect(mongoCtx, clientOptions)
 	if err != nil {
