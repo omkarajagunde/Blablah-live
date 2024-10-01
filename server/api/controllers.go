@@ -26,6 +26,7 @@ var connections = make(map[string]*db.UserSocket)
 func (c *ChatController) Ws(conn *websocket.Conn) {
 	// Extract userId from query parameters
 	userId := conn.Params("id")
+	siteId := conn.Query("SiteId")
 	if userId != "" {
 		user, isErr := models.GetUser(userId)
 		if isErr {
@@ -38,10 +39,10 @@ func (c *ChatController) Ws(conn *websocket.Conn) {
 		}
 
 		connections[userId] = &db.UserSocket{
-			UserId:         userId,
-			Conn:           conn,
-			IsActive:       true,
-			LastStreamQuit: make(chan bool),
+			UserId:     userId,
+			Conn:       conn,
+			IsActive:   true,
+			ActiveSite: siteId,
 		}
 
 		log.Info("User connected - ", userId)
@@ -64,7 +65,6 @@ func (c *ChatController) SendMessage(ctx *fiber.Ctx) error {
 
 	var message models.MessageModel
 	var userId string = ctx.Get("X-Id")
-	var siteId string = ctx.Query("SiteId")
 
 	if userId == "" {
 		return ctx.Status(400).JSON(fiber.Map{
@@ -84,17 +84,6 @@ func (c *ChatController) SendMessage(ctx *fiber.Ctx) error {
 
 	if user != nil {
 		user.ModifiedAt = time.Now()
-	}
-
-	if user != nil && user.ActiveSite != "" {
-		if user.ActiveSite != siteId {
-			return ctx.Status(500).JSON(fiber.Map{
-				"status":  500,
-				"message": "User is not active on this channel, not allowed to send message",
-				"code":    "USER_NOT_ACTIVE_ON_SITE",
-			})
-		}
-
 	}
 
 	// Parse the JSON body into the struct
@@ -222,6 +211,7 @@ func (c *ChatController) UpdateUser(ctx *fiber.Ctx) error {
 				if val {
 					user.IsOnline = true
 					user.ActiveSite = siteId
+					connections[userId].ActiveSite = siteId
 
 					_, ok := channels[user.ActiveSite]
 					if !ok {

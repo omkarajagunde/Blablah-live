@@ -2,6 +2,7 @@ package models
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -149,6 +150,15 @@ func ListenChannel(channelId string) {
 
 		// Process the change event (insert, update, delete, etc.)
 		fmt.Printf("Received change event: %v\n", event)
+		// Convert the map to JSON
+		jsonData, err := json.Marshal(event)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		// Print the JSON output
+		fmt.Println(string(jsonData))
 		// err := user.Conn.WriteJSON(map[string]interface{}{
 		// 	"MsgId":  message.ID,
 		// 	"Values": message.Values,

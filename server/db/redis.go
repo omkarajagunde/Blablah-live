@@ -22,10 +22,10 @@ type MessageModel struct {
 }
 
 type UserSocket struct {
-	UserId         string
-	Conn           *websocket.Conn
-	IsActive       bool
-	LastStreamQuit chan bool
+	UserId     string
+	Conn       *websocket.Conn
+	IsActive   bool
+	ActiveSite string
 }
 
 var (
