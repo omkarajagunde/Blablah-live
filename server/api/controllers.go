@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"sync"
 	"time"
 
 	"server/db"
@@ -16,8 +15,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-var channels map[string]bool
-var wg sync.WaitGroup
+var channels = make(map[string]bool)
 
 // ChatController implements the Controllers interface
 type ChatController struct{}
