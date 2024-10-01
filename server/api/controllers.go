@@ -20,9 +20,7 @@ var channels = make(map[string]bool)
 // ChatController implements the Controllers interface
 type ChatController struct{}
 
-var connections = make(map[string]*db.UserSocket)
-
-// Ws handles WebSocket connections
+// Ws handles WebSocket Connections
 func (c *ChatController) Ws(conn *websocket.Conn) {
 	// Extract userId from query parameters
 	userId := conn.Params("id")
@@ -38,7 +36,7 @@ func (c *ChatController) Ws(conn *websocket.Conn) {
 			conn.Close()
 		}
 
-		connections[userId] = &db.UserSocket{
+		db.Connections[userId] = &db.UserSocket{
 			UserId:     userId,
 			Conn:       conn,
 			IsActive:   true,
@@ -212,9 +210,9 @@ func (c *ChatController) UpdateUser(ctx *fiber.Ctx) error {
 					user.IsOnline = true
 					user.ActiveSite = siteId
 
-					_, connExists := connections[userId]
+					_, connExists := db.Connections[userId]
 					if connExists {
-						connections[userId].ActiveSite = siteId
+						db.Connections[userId].ActiveSite = siteId
 					}
 
 					_, channelExists := channels[user.ActiveSite]

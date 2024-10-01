@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"server/db"
 	"time"
 
 	"github.com/gofiber/fiber/v2/log"
@@ -158,7 +159,22 @@ func ListenChannel(channelId string) {
 		}
 
 		// Print the JSON output
-		fmt.Println(string(jsonData))
+		fmt.Printf("JSON Event -  %s\n", string(jsonData))
+
+		operationType, ok := event["operationType"]
+		if ok && operationType == "insert" {
+			for _, userConn := range db.Connections {
+				if doc, docExists := event["fullDocument"].(bson.M); docExists {
+					if channel, channelExists := doc["channel"].(string); channelExists {
+						if userConn.IsActive && userConn.ActiveSite == channel {
+							userConn.Conn.WriteJSON(doc)
+						}
+					}
+				}
+
+			}
+
+		}
 		// err := user.Conn.WriteJSON(map[string]interface{}{
 		// 	"MsgId":  message.ID,
 		// 	"Values": message.Values,

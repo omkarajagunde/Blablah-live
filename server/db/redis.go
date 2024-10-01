@@ -29,9 +29,10 @@ type UserSocket struct {
 }
 
 var (
-	ctx    = context.Background()
-	client *redis.Client
-	mutex  sync.Mutex
+	ctx         = context.Background()
+	client      *redis.Client
+	mutex       sync.Mutex
+	Connections = make(map[string]*UserSocket)
 )
 
 func RedisInit() bool {
