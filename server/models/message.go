@@ -163,6 +163,7 @@ func ListenChannel(channelId string) {
 		operationType, ok := event["operationType"]
 		if ok && operationType == "insert" {
 			for _, userConn := range db.Connections {
+				log.Debug("userConn - ", userConn)
 				if doc, docExists := event["fullDocument"].(bson.M); docExists {
 					if channel, channelExists := doc["channel"].(string); channelExists {
 						if userConn.IsActive && userConn.ActiveSite == channel {
