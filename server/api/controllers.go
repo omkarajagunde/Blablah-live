@@ -207,14 +207,18 @@ func (c *ChatController) UpdateUser(ctx *fiber.Ctx) error {
 		if user != nil {
 			user.ModifiedAt = time.Now()
 			if val, err := strconv.ParseBool(isOnline); err == nil {
-				log.Debug("IsOnline - ", val)
+				log.Info("IsOnline - ", val)
 				if val {
 					user.IsOnline = true
 					user.ActiveSite = siteId
-					connections[userId].ActiveSite = siteId
 
-					_, ok := channels[user.ActiveSite]
-					if !ok {
+					_, connExists := connections[userId]
+					if connExists {
+						connections[userId].ActiveSite = siteId
+					}
+
+					_, channelExists := channels[user.ActiveSite]
+					if !channelExists {
 						go models.ListenChannel(user.ActiveSite)
 						channels[user.ActiveSite] = true
 					}
