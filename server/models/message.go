@@ -2,7 +2,6 @@ package models
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"server/db"
 	"time"
@@ -152,14 +151,14 @@ func ListenChannel(channelId string) {
 		// Process the change event (insert, update, delete, etc.)
 		fmt.Printf("Received change event: %v\n", event)
 		// Convert the map to JSON
-		jsonData, err := json.Marshal(event)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
+		// jsonData, err := json.Marshal(event)
+		// if err != nil {
+		// 	fmt.Println(err)
+		// 	return
+		// }
 
-		// Print the JSON output
-		fmt.Printf("JSON Event -  %s\n", string(jsonData))
+		// // Print the JSON output
+		// fmt.Printf("JSON Event -  %s\n", string(jsonData))
 
 		operationType, ok := event["operationType"]
 		if ok && operationType == "insert" {
