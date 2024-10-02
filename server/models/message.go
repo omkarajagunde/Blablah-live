@@ -101,11 +101,17 @@ func FlagMessage(messageID primitive.ObjectID, userID interface{}) (*mongo.Updat
 }
 
 // GetLast50Messages returns the last 50 messages for a specific channel, starting from a given message ID
-func GetMessages(limit int64, channel string, bookmarkID primitive.ObjectID) ([]MessageModel, error) {
+func GetMessages(limit int64, channel string, bookmarkID string) ([]MessageModel, error) {
+
 	filter := bson.M{
 		"channel": channel,
-		"_id":     bson.M{"$lt": bookmarkID}, // Get messages with IDs less than the bookmark
 	}
+
+	// If bookmarkID is not the zero value, add it to the filter
+	if bookmarkID != "" {
+		filter["_id"] = bson.M{"$lt": bookmarkID} // Get messages with IDs less than the bookmark
+	}
+
 	opts := options.Find().SetLimit(limit).SetSort(bson.M{"_id": -1}) // Sort by ID descending (newer first)
 
 	cursor, err := messageService.Collection.Find(messageService.ctx, filter, opts)

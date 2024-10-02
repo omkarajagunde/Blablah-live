@@ -106,9 +106,37 @@ func (c *ChatController) SendMessage(ctx *fiber.Ctx) error {
 // GetMessages retrieves a list of messages
 func (c *ChatController) GetMessages(ctx *fiber.Ctx) error {
 
+	userId := ctx.Get("X-Id")
+	siteId := ctx.Query("SiteId")
+	bookmark := ctx.Query("Bookmark", "")
+
+	if userId == "" {
+		return ctx.Status(400).JSON(fiber.Map{
+			"message": "User id not passed",
+			"status":  400,
+		})
+	}
+
+	_, isErr := models.GetUser(userId)
+	if isErr {
+		return ctx.Status(500).JSON(fiber.Map{
+			"status":  500,
+			"message": "User not found, for passed user id!",
+			"code":    "USER_NOT_FOUND",
+		})
+	}
+
+	chatArray, retrievalErr := models.GetMessages(50, siteId, bookmark)
+	if retrievalErr != nil {
+		return ctx.Status(500).JSON(fiber.Map{
+			"message": retrievalErr,
+			"status":  500,
+		})
+	}
 	return ctx.Status(200).JSON(fiber.Map{
 		"message": "Messages sent to site successfully",
 		"status":  200,
+		"data":    chatArray,
 	})
 }
 
