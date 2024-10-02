@@ -136,7 +136,7 @@ func GetMessages(limit int64, channel string, bookmarkID string) ([]MessageModel
 	// Get the last message's ID (bookmark ID)
 	var lastMessageID string
 	if len(messages) > 0 {
-		lastMessageID = messages[len(messages)-1].Id.String()
+		lastMessageID = messages[len(messages)-1].Id.Hex()
 	} else {
 		lastMessageID = primitive.NilObjectID.String()
 	}
