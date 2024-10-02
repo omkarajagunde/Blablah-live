@@ -254,7 +254,6 @@ func (c *ChatController) UpdateUser(ctx *fiber.Ctx) error {
 		if user != nil {
 			user.ModifiedAt = time.Now()
 			if val, err := strconv.ParseBool(isOnline); err == nil {
-				log.Info("IsOnline - ", val)
 				if val {
 					user.IsOnline = true
 					user.ActiveSite = siteId
@@ -274,6 +273,10 @@ func (c *ChatController) UpdateUser(ctx *fiber.Ctx) error {
 
 				} else {
 					user.IsOnline = false
+					mutex.Lock()
+					db.Connections[userId].ActiveSite = siteId
+					db.Connections[userId].IsActive = false
+					mutex.Unlock()
 				}
 			}
 
