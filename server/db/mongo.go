@@ -2,10 +2,10 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"os"
 
 	"github.com/gofiber/fiber/v2/log"
-
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -18,11 +18,10 @@ var (
 func MongoInit(colName string) (*mongo.Collection, context.Context) {
 
 	if db != nil {
-		log.Info("Connected to collection - ", colName)
+		fmt.Printf("Connected to collection - %s", colName)
 		return db.Collection(colName), mongoCtx
 	}
 
-	log.Info("MONGO_URL - ", os.Getenv("MONGO_URL"))
 	clientOptions := options.Client().ApplyURI(os.Getenv("MONGO_URL"))
 	client, err := mongo.Connect(mongoCtx, clientOptions)
 	if err != nil {
@@ -35,6 +34,6 @@ func MongoInit(colName string) (*mongo.Collection, context.Context) {
 	}
 
 	db = client.Database(os.Getenv("MONGO_DB_NAME"))
-	log.Info("Connected to collection - ", colName)
+	fmt.Printf("Connected to collection - %s", colName)
 	return db.Collection(colName), mongoCtx
 }

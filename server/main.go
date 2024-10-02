@@ -45,7 +45,7 @@ func main() {
 
 	go func() {
 		// Create a ticker that triggers every 5 seconds
-		ticker := time.NewTicker(5 * time.Second)
+		ticker := time.NewTicker(2 * time.Minute)
 		defer ticker.Stop()
 
 		// Infinite loop to print the number of Goroutines

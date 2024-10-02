@@ -40,6 +40,12 @@ func (c *ChatController) Ws(conn *websocket.Conn) {
 			conn.Close()
 		}
 
+		// Setting a close handler
+		conn.SetCloseHandler(func(code int, text string) error {
+			fmt.Printf("Connection closed with code: %d, reason: %s, user: %s", code, text, userId)
+			return nil
+		})
+
 		mutex.Lock()
 		db.Connections[userId] = &db.UserSocket{
 			UserId:     userId,
@@ -47,9 +53,16 @@ func (c *ChatController) Ws(conn *websocket.Conn) {
 			IsActive:   true,
 			ActiveSite: siteId,
 		}
-		mutex.TryLock()
+		fmt.Printf("User connected - %s", userId)
+		mutex.Unlock()
 
-		log.Info("User connected - ", userId)
+		defer func() {
+			fmt.Printf("User disconnected - %s", userId)
+			conn.Close()
+			mutex.Lock()
+			db.Connections[userId].IsActive = false
+			mutex.Unlock()
+		}()
 
 		if user != nil && user.ActiveSite != "" {
 			_, ok := channels[user.ActiveSite]
