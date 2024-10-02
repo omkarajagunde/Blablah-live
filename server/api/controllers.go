@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"sync"
 	"time"
 
 	"server/db"
@@ -16,6 +17,9 @@ import (
 )
 
 var channels = make(map[string]bool)
+
+// Mutex to protect the counter
+var mutex sync.Mutex
 
 // ChatController implements the Controllers interface
 type ChatController struct{}
@@ -36,12 +40,14 @@ func (c *ChatController) Ws(conn *websocket.Conn) {
 			conn.Close()
 		}
 
+		mutex.Lock()
 		db.Connections[userId] = &db.UserSocket{
 			UserId:     userId,
 			Conn:       conn,
 			IsActive:   true,
 			ActiveSite: siteId,
 		}
+		mutex.TryLock()
 
 		log.Info("User connected - ", userId)
 
@@ -242,7 +248,9 @@ func (c *ChatController) UpdateUser(ctx *fiber.Ctx) error {
 
 					_, connExists := db.Connections[userId]
 					if connExists {
+						mutex.Lock()
 						db.Connections[userId].ActiveSite = siteId
+						mutex.Unlock()
 					}
 
 					_, channelExists := channels[user.ActiveSite]

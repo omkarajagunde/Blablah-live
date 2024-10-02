@@ -1,11 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
+	"runtime"
 	"server/api"
 	"server/db"
 	"server/models"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -39,6 +42,19 @@ func main() {
 
 	// Setup APIs
 	api.SetupRoutes(app)
+
+	go func() {
+		// Create a ticker that triggers every 5 seconds
+		ticker := time.NewTicker(5 * time.Second)
+		defer ticker.Stop()
+
+		// Infinite loop to print the number of Goroutines
+		for range ticker.C {
+			// Get the number of running Goroutines
+			numGoroutines := runtime.NumGoroutine()
+			fmt.Printf("Number of Running Goroutines: %d\n", numGoroutines)
+		}
+	}()
 
 	PORT := os.Getenv("PORT")
 	log.Fatal(app.Listen(":" + PORT))
