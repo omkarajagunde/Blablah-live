@@ -15,15 +15,15 @@ import (
 
 // Message representation
 type MessageModel struct {
-	_id        primitive.ObjectID     `bson:"_id"`
-	created_at time.Time              `bson:"created_at"`
-	updated_at time.Time              `bson:"updated_at"`
-	message    string                 `bson:"message"`
-	channel    string                 `bson:"channel"`
-	to         string                 `json:"to"`
-	from       map[string]interface{} `json:"from"`
-	reations   map[string]interface{} `json:"reactions"`
-	flagged    []interface{}          `json:"flagged"`
+	Id        primitive.ObjectID     `bson:"_id"`
+	CreatedAt time.Time              `bson:"created_at"`
+	UpdatedAt time.Time              `bson:"updated_at"`
+	Message   string                 `bson:"message"`
+	ChannelId string                 `bson:"channel"`
+	To        string                 `json:"to"`
+	From      map[string]interface{} `json:"from"`
+	Reactions map[string]interface{} `json:"reactions"`
+	Flagged   []interface{}          `json:"flagged"`
 }
 
 type MessageService struct {
@@ -39,9 +39,9 @@ func CreateMessageService(collection *mongo.Collection, ctx context.Context) {
 
 func WriteMessageToChannel(message MessageModel) interface{} {
 
-	message._id = primitive.NewObjectID()
-	message.created_at = time.Now()
-	message.updated_at = time.Now()
+	message.Id = primitive.NewObjectID()
+	message.CreatedAt = time.Now()
+	message.UpdatedAt = time.Now()
 
 	result, streamErr := messageService.Collection.InsertOne(messageService.ctx, message)
 	if streamErr != nil {
@@ -77,7 +77,7 @@ func FlagMessage(messageID primitive.ObjectID, userID interface{}) (*mongo.Updat
 
 	// Check if user is already in flagged array
 	isFlagged := false
-	for _, v := range message.flagged {
+	for _, v := range message.Flagged {
 		if v == userID {
 			isFlagged = true
 			break
