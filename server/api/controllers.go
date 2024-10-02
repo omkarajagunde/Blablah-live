@@ -53,11 +53,11 @@ func (c *ChatController) Ws(conn *websocket.Conn) {
 			IsActive:   true,
 			ActiveSite: siteId,
 		}
-		fmt.Printf("User connected - %s", userId)
+		fmt.Printf("User connected - %s\n", userId)
 		mutex.Unlock()
 
 		defer func() {
-			fmt.Printf("User disconnected - %s", userId)
+			fmt.Printf("User disconnected - %s\n", userId)
 			conn.Close()
 			mutex.Lock()
 			db.Connections[userId].IsActive = false

@@ -27,10 +27,8 @@ type Flagged struct {
 
 // User data representation
 type UserModel struct {
-	Id string `bson:"_id"`
-
+	Id            string    `bson:"_id"`
 	Username      string    `bson:"username"`
-	Avatar        string    `bson:"avatar"`
 	Ip            string    `bson:"ip"`
 	IsOnline      bool      `bson:"is_online"`
 	ExploredSites []string  `bson:"explored_sites"`
@@ -88,16 +86,12 @@ func NewUser(ctx *fiber.Ctx) (*UserModel, bool) {
 	defer close(ch)
 
 	username := gofakeit.Gamertag()
-	avatarUrl := strings.Replace(C.AVATAR_GENERATOR_URL, "REPLACE_SEED_HERE", username, 1)
 	ipUrl := strings.Replace(C.IP_INFO_URL, "REPLACE_IP_HERE", ctx.IP(), 1)
 
-	go get("svg", avatarUrl, ch)
 	go get("ipinfo", ipUrl, ch)
 
 	result := map[string]string{}
 	temp := <-ch
-	result[temp["tag"]] = temp["value"]
-	temp = <-ch
 	result[temp["tag"]] = temp["value"]
 
 	// Convert string to map
@@ -114,7 +108,6 @@ func NewUser(ctx *fiber.Ctx) (*UserModel, bool) {
 	user := &UserModel{
 		Id:            userId,
 		Username:      username,
-		Avatar:        result["svg"],
 		Ip:            ctx.IP(),
 		IsOnline:      true,
 		ExploredSites: []string{siteId},
