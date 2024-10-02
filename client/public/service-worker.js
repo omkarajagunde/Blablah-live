@@ -2,6 +2,16 @@ var onTabActivatedInterval = null;
 var panelClosedCalled = false;
 var socket = null;
 var activeTabId = null;
+var currentURL = "";
+
+function sanitizeSiteUrl(url) {
+	const site = new URL(url);
+	if (url.includes("youtube")) {
+	}
+	if (url.includes("amazon")) {
+	}
+	return `${site.protocol}//${site.host}${site.pathname}`;
+}
 
 function deepParse(obj) {
 	if (typeof obj === "string") {
@@ -27,7 +37,9 @@ function deepParse(obj) {
 
 function openWebSocket(user_id) {
 	if (!socket) {
-		socket = new WebSocket(`ws://localhost:3000/receive/${user_id}`);
+		socket = new WebSocket(
+			`ws://blablah-live-production.up.railway.app/receive/${user_id}?SiteId=${sanitizeSiteUrl(currentURL)}`
+		);
 	}
 
 	socket.onopen = function (event) {
@@ -45,6 +57,7 @@ function openWebSocket(user_id) {
 
 	socket.onclose = function (event) {
 		console.log("WebSocket closed. Reconnecting...", event);
+		socket = null;
 		setTimeout(() => {
 			openWebSocket(user_id);
 		}, 5000); // Attempt to reconnect after 5 seconds
@@ -64,7 +77,7 @@ chrome.runtime.onConnect.addListener((port) => {
 			if (!panelClosedCalled) {
 				panelClosedCalled = true;
 				chrome.storage.local.get(["user_id"], (result) => {
-					fetch("http://localhost:3000/update/user?IsOnline=false", {
+					fetch("https://blablah-live-production.up.railway.app/update/user?IsOnline=false", {
 						method: "POST",
 						headers: { "X-Id": result["user_id"] }
 					})
@@ -103,6 +116,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 function updateTabUrl() {
 	chrome.tabs.get(activeTabId, (tab) => {
 		if (tab && tab.url) {
+			currentURL = tab.url;
 			// Broadcast the updated URL to the side panel
 			chrome.runtime.sendMessage({ action: "UPDATE_URL", url: tab.url });
 		}
@@ -124,6 +138,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 	 * then this onUpdated event is called
 	 */
 	if (changeInfo.url) {
+		currentURL = changeInfo.url;
 		// If the URL changes, update the side panel with the new URL
 		chrome.runtime.sendMessage({ action: "UPDATE_URL", url: changeInfo.url });
 	}

@@ -32,21 +32,20 @@ export const getItemFromChromeStorage = (key: string) => {
 
 
 export interface ChatMessage {
-    MsgId: string,
-    Values: {
-        Timestamp: string;
-        From: {
-            Id: string;
-            Avatar: string;
-            Username: string;
-        };
-        To: string;
-        Reactions:
-            | {
-                    [key: string]: number;
-            }
-            | {};
-        Flagged: string[];
-        Message: string;
-    }
+    _id: string,
+    created_at: string,
+    updated_at: string,
+    from: {
+        Id: string;
+        Avatar: string;
+        Username: string;
+    },
+    to: string,
+    reactions:
+        | {
+                [key: string]: number;
+        }
+        | {},
+    flagged: string[],
+    message: string
 }

@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
 // import {
 // 	DropdownMenu,
 // 	DropdownMenuContent,
@@ -15,27 +16,26 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-	Users,
-	MessageSquare,
 	Sun,
 	Moon,
 	Send,
 	// MoreVertical,
 	SmilePlus,
-	Globe,
-	ExternalLink,
+	// ExternalLink,
 	Settings,
-	User,
 	Flag,
 	Reply,
 	X,
 	ChevronDown,
 	ChevronUp,
 	ArrowUp,
-	MessageCircle
+	// MessageCircle,
+	ArrowDown,
+	AlertCircle
 } from "lucide-react";
 import axios from "axios";
 import { ChatMessage, getItemFromChromeStorage } from "@/lib/utils";
+import { Alert, AlertTitle, AlertDescription } from "./ui/alert";
 
 const emojis = ["😀", "😂", "😍", "🤔", "👍", "👎", "❤️", "🎉", "🔥", "👀"];
 const emojiNames = [
@@ -57,49 +57,35 @@ const giphyStickers = [
 	"https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMXh6ZWkxZTlkMzFvMWF0NnFxOHFxbXFmNHd3NXV2bG01aHIyeGpmNyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/l0HlGsmOxGDberRJe/giphy.gif"
 ];
 
-const anonymousNames = [
-	"Cosmic Coder",
-	"Pixel Wizard",
-	"Binary Bard",
-	"Quantum Quill",
-	"Neural Ninja",
-	"Data Dynamo",
-	"Logic Luminary",
-	"Syntax Sorcerer",
-	"Algorithm Ace",
-	"Cyber Sage"
-];
-
 export function ChatInterface({
 	currentURL,
 	chat,
-	setChat
+	setChat,
+	hasMoreMessages,
+	handleLoadMessages
 }: {
 	currentURL: string | null;
 	chat: ChatMessage[];
 	setChat: Function;
+	hasMoreMessages: boolean;
+	handleLoadMessages: Function;
 }) {
 	const [darkMode, setDarkMode] = useState(true);
-	const [showUsers, setShowUsers] = useState(false);
-	const [showGlobal, setShowGlobal] = useState(false);
 	const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
 	const [message, setMessage] = useState("");
 	const [showEmojiSuggestions, setShowEmojiSuggestions] = useState(false);
 	const [pinnedExpanded, setPinnedExpanded] = useState(false);
-	const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+	const [showScrollToBottom, setShowScrollToBottom] = useState(true);
 	const [hoveredMessage, setHoveredMessage] = useState(null);
+	const [alert, setAlert] = useState<{ flag: boolean; message: string; type: string }>({
+		flag: false,
+		message: "",
+		type: "success"
+	});
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 	const chatRef = useRef<HTMLDivElement>(null);
 
 	const toggleDarkMode = () => setDarkMode(!darkMode);
-	const toggleUsersView = () => {
-		setShowUsers(!showUsers);
-		setShowGlobal(false);
-	};
-	const toggleGlobalView = () => {
-		setShowGlobal(!showGlobal);
-		setShowUsers(false);
-	};
 
 	useEffect(() => {
 		if (textareaRef.current && message.length > 0) {
@@ -109,16 +95,17 @@ export function ChatInterface({
 	}, [message]);
 
 	useEffect(() => {
-		const handleScroll = () => {
+		chatRef.current?.addEventListener("scroll", () => {
 			if (chatRef.current) {
 				const { scrollTop, scrollHeight, clientHeight } = chatRef.current;
-				setShowScrollToBottom(scrollTop < scrollHeight - clientHeight - 100);
+				setShowScrollToBottom(scrollTop < scrollHeight - clientHeight - 50);
 			}
-		};
-
-		chatRef.current?.addEventListener("scroll", handleScroll);
-		return () => chatRef.current?.removeEventListener("scroll", handleScroll);
+		});
 	}, []);
+
+	useEffect(() => {
+		scrollToBottom();
+	}, [chat]);
 
 	const handleMessageChange = (e: any) => {
 		setMessage(e.target.value);
@@ -129,9 +116,10 @@ export function ChatInterface({
 		setMessage(message + emoji);
 		setShowEmojiSuggestions(false);
 	};
-
 	const scrollToBottom = () => {
-		chatRef.current?.scrollTo({ top: chatRef.current.scrollHeight, behavior: "smooth" });
+		if (chatRef.current) {
+			chatRef.current.scrollTop = chatRef.current.scrollHeight;
+		}
 	};
 
 	const sendMessage = async () => {
@@ -139,7 +127,7 @@ export function ChatInterface({
 		let myProfile = await getItemFromChromeStorage("profile");
 		try {
 			const headers: { [key: string]: string } = {};
-			if (userId) {
+			if (userId && message.length > 0) {
 				// @ts-ignore
 				headers["X-Id"] = userId;
 				let messageObj = {
@@ -153,28 +141,44 @@ export function ChatInterface({
 					ChannelId: currentURL
 				};
 				let response = await axios.post(
-					`http://localhost:3000/send?SiteId=${currentURL}`,
+					`https://blablah-live-production.up.railway.app/send?SiteId=${currentURL}`,
 					{ ...messageObj },
 					{ headers }
 				);
-				setChat([...chat, { MsgId: response.data.MsgId, Values: messageObj }]);
-				if (textareaRef.current) {
-					textareaRef.current.value = "";
-				}
+				setChat([
+					...chat,
+					{
+						_id: response.data.MsgId,
+						created_at: messageObj.Timestamp,
+						updated_at: messageObj.Timestamp,
+						from: messageObj.From,
+						flagged: messageObj.Flagged,
+						channel: messageObj.ChannelId,
+						message: messageObj.Message,
+						to: messageObj.To,
+						reactions: messageObj.Reactions
+					}
+				]);
+				setMessage("");
+				scrollToBottom();
 			}
 		} catch (error) {
 			console.log(error);
+			// @ts-ignore
+			if (error?.response?.status === 429) {
+				setAlert((prevState: any) => ({
+					...prevState,
+					flag: true,
+					message: "To many requests, slow down!...",
+					type: "error"
+				}));
+			}
 		}
 	};
 
-	const groupedMessages = chat.reduce((groups: any, message) => {
-		const date = new Date(message.Values.Timestamp).toLocaleDateString();
-		if (!groups[date]) {
-			groups[date] = [];
-		}
-		groups[date].push(message);
-		return groups;
-	}, {});
+	const loadMoreMessages = () => {
+		handleLoadMessages();
+	};
 
 	return (
 		<div className={`flex flex-col h-screen w-full ${darkMode ? "dark" : ""}`}>
@@ -182,30 +186,23 @@ export function ChatInterface({
 				<header className="flex flex-col border-b border-border p-2 space-y-2">
 					<div className="flex items-center justify-between">
 						<span className="text-sm font-medium truncate">{currentURL}</span>
-					</div>
-					<div className="flex items-center justify-end space-x-2">
-						<div className="flex items-center">
-							<span className="relative flex h-3 w-3 mr-2">
-								<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-								<span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-							</span>
-							<span className="text-sm font-medium">5 users</span>
+						<div className="flex items-center justify-end space-x-2">
+							<div className="flex items-center">
+								<span className="relative flex h-3 w-3 mr-2">
+									<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+									<span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+								</span>
+								<span className="text-sm font-medium">5 users</span>
+							</div>
+
+							<Button variant="ghost" size="icon">
+								<Settings className="h-4 w-4" />
+							</Button>
+
+							<Button variant="ghost" size="icon" onClick={toggleDarkMode}>
+								{darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+							</Button>
 						</div>
-						<Button variant="ghost" size="icon" onClick={toggleGlobalView}>
-							<Globe className="h-4 w-4" />
-						</Button>
-						<Button variant="ghost" size="icon" onClick={toggleUsersView}>
-							{showUsers ? <MessageSquare className="h-4 w-4" /> : <Users className="h-4 w-4" />}
-						</Button>
-						<Button variant="ghost" size="icon">
-							<Settings className="h-4 w-4" />
-						</Button>
-						<Button variant="ghost" size="icon">
-							<User className="h-4 w-4" />
-						</Button>
-						<Button variant="ghost" size="icon" onClick={toggleDarkMode}>
-							{darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-						</Button>
 					</div>
 				</header>
 
@@ -228,173 +225,129 @@ export function ChatInterface({
 					</CollapsibleContent>
 				</Collapsible>
 
-				{showScrollToBottom && (
-					<div className="sticky top-0 z-10 flex justify-center py-2 bg-gradient-to-b from-background to-transparent">
-						<Button variant="secondary" size="sm" className="rounded-full shadow-md" onClick={scrollToBottom}>
-							<ArrowUp className="h-4 w-4 mr-2" />
-							View recent messages
-						</Button>
-					</div>
-				)}
-
-				<ScrollArea className="flex-1 p-4">
-					{showGlobal ? (
-						<div className="space-y-4">
-							{[
-								{ url: "https://vercel.com", users: 5 },
-								{ url: "https://nextjs.org", users: 3 },
-								{ url: "https://react.dev", users: 7 }
-							].map((site, index) => (
-								<div key={index} className="flex items-center justify-between p-2 rounded hover:bg-muted">
-									<span className="truncate flex-1 mr-2">{site.url}</span>
-									<span className="text-sm font-medium mr-2">{site.users} users</span>
-									<Button variant="ghost" size="icon" onClick={() => window.open(site.url, "_blank")}>
-										<ExternalLink className="h-4 w-4" />
-									</Button>
-								</div>
-							))}
-						</div>
-					) : showUsers ? (
-						<div className="space-y-4">
-							{[
-								{ name: anonymousNames[0], online: true, karma: 120 },
-								{ name: anonymousNames[1], online: false, karma: 85 },
-								{ name: anonymousNames[2], online: true, karma: 230 }
-							].map((user, index) => (
-								<div key={index} className="flex items-center justify-between p-2 rounded hover:bg-muted">
-									<div className="flex items-center space-x-2">
-										<div className={`w-2 h-2 rounded-full ${user.online ? "bg-green-500" : "bg-gray-500"}`}></div>
-										<img
-											src="/placeholder.svg?height=32&width=32"
-											alt={`${user.name} avatar`}
-											className="w-8 h-8 rounded-full bg-muted"
-										/>
-										<span className="font-medium">{user.name}</span>
-									</div>
-									<div className="flex items-center space-x-2">
-										<span className="text-sm text-muted-foreground">{user.karma} karma</span>
-										<TooltipProvider>
-											<Tooltip>
-												<TooltipTrigger asChild>
-													<Button variant="ghost" size="sm" className="group">
-														<MessageCircle className="h-4 w-4 transition-transform group-hover:scale-110" />
-													</Button>
-												</TooltipTrigger>
-												<TooltipContent>
-													<p>Send DM</p>
-												</TooltipContent>
-											</Tooltip>
-										</TooltipProvider>
-									</div>
-								</div>
-							))}
-						</div>
-					) : (
-						<div className="space-y-8" ref={chatRef}>
-							{Object.entries(groupedMessages).map(([date, messages]: [any, any]) => (
-								<div key={date}>
-									<div className="flex items-center my-4">
-										<div className="flex-grow border-t border-border"></div>
-										<span className="mx-4 text-sm text-muted-foreground">
-											{date === new Date().toLocaleDateString() ? "Today" : date}
-										</span>
-										<div className="flex-grow border-t border-border"></div>
-									</div>
-									{messages.map((msg: any) => (
-										<div
-											key={msg.Values.From.Id}
-											className="flex items-start space-x-2 group relative p-2 rounded-lg"
-											onMouseEnter={() => setHoveredMessage(msg.MsgId)}
-											onMouseLeave={() => setHoveredMessage(null)}
-										>
-											<div
-												className="w-10 h-10 rounded-full bg-muted"
-												//dangerouslySetInnerHTML={{ __html: msg.Values.From.Avatar }}
-											></div>
-											<div className="flex-1">
-												<div className="rounded-lg">
-													<div className="flex items-center justify-between">
-														<span className="font-semibold">{msg.Values.From.Username}</span>
-														<span className="text-xs text-muted-foreground">
-															{new Date(msg.Values.Timestamp).toLocaleTimeString()}
-														</span>
-													</div>
-													<p className="mt-1 text-sm">{msg.Values.Message}</p>
-													{msg.sticker && (
-														<img src={msg.sticker} alt="Sticker" className="mt-2 max-w-[200px] rounded" />
-													)}
-												</div>
-												<div className="flex items-center mt-2 space-x-1">
-													{Object.entries(msg.Values.Reactions).map(([emoji, count]: [any, any]) => (
-														<Button key={emoji} variant="secondary" size="sm" className="text-xs">
-															{emoji} {count}
-														</Button>
-													))}
-												</div>
-											</div>
-											{hoveredMessage === msg.MsgId && (
-												<div className="absolute right-2 top-2 flex items-center space-x-1 bg-background/80 backdrop-blur-sm rounded p-1">
-													<Popover>
-														<PopoverTrigger asChild>
-															<Button variant="ghost" size="sm">
-																<SmilePlus className="h-4 w-4" />
-															</Button>
-														</PopoverTrigger>
-														<PopoverContent className="w-full p-0">
-															<div className="grid grid-cols-5 gap-2 p-2">
-																{emojis.map((emoji) => (
-																	<Button key={emoji} variant="ghost" size="sm" className="text-lg">
-																		{emoji}
-																	</Button>
-																))}
-															</div>
-														</PopoverContent>
-													</Popover>
-													<TooltipProvider>
-														<Tooltip>
-															<TooltipTrigger asChild>
-																<Button variant="ghost" size="sm" onClick={() => setReplyTo(msg)}>
-																	<Reply className="h-4 w-4" />
-																</Button>
-															</TooltipTrigger>
-															<TooltipContent>
-																<p>Reply</p>
-															</TooltipContent>
-														</Tooltip>
-													</TooltipProvider>
-													<TooltipProvider>
-														<Tooltip>
-															<TooltipTrigger asChild>
-																<Button variant="ghost" size="sm">
-																	<Flag className="h-4 w-4 text-red-500" />
-																</Button>
-															</TooltipTrigger>
-															<TooltipContent>
-																<p>Flag message</p>
-															</TooltipContent>
-														</Tooltip>
-													</TooltipProvider>
-												</div>
-											)}
-										</div>
-									))}
-								</div>
-							))}
+				<div className="flex-1 overflow-y-auto space-y-4 px-4 my-2 scroll-smooth" ref={chatRef}>
+					{hasMoreMessages && (
+						<div className="sticky top-0 z-10 flex justify-center py-2 bg-gradient-to-b from-background to-transparent">
+							<Button variant="secondary" size="sm" className="rounded-full shadow-md" onClick={loadMoreMessages}>
+								<ArrowUp className="h-4 w-4 mr-2" />
+								Load more messages
+							</Button>
 						</div>
 					)}
-				</ScrollArea>
+					{chat.map((msg: any) => (
+						<div
+							key={msg.from.Id}
+							id={msg._id}
+							className="flex items-start space-x-2 group relative rounded-lg"
+							onMouseEnter={() => setHoveredMessage(msg._id)}
+							onMouseLeave={() => setHoveredMessage(null)}
+						>
+							<img
+								className="w-10 h-10 rounded-full bg-muted"
+								src={`https://api.dicebear.com/9.x/thumbs/svg?seed=${msg.from.Username}&radius=50&backgroundColor=0a5b83,1c799f,69d2e7,f1f4dc,f88c49,b6e3f4,c0aede&translateY=15&randomizeIds=true`}
+							></img>
+							<div className="flex-1">
+								<div className="rounded-lg">
+									<div className="flex items-center justify-between">
+										<span className="font-semibold">{msg.from.Username}</span>
+										<span className="text-xs text-muted-foreground">
+											{new Date(msg.updated_at).toLocaleTimeString()}
+										</span>
+									</div>
+									<p className="mt-1 text-sm break-all">{msg.message}</p>
+									{msg.sticker && <img src={msg.sticker} alt="Sticker" className="mt-2 max-w-[200px] rounded" />}
+								</div>
+								<div className="flex items-center mt-2 space-x-1">
+									{Object.entries(msg.reactions).map(([emoji, count]: [any, any]) => (
+										<Button key={emoji} variant="secondary" size="sm" className="text-xs">
+											{emoji} {count}
+										</Button>
+									))}
+								</div>
+							</div>
+							{hoveredMessage === msg._id && (
+								<div className="absolute right-2 top-2 flex items-center space-x-1 bg-background/80 backdrop-blur-sm rounded p-1">
+									<Popover>
+										<PopoverTrigger asChild>
+											<Button variant="ghost" size="sm">
+												<SmilePlus className="h-4 w-4" />
+											</Button>
+										</PopoverTrigger>
+										<PopoverContent className="w-full p-0">
+											<div className="grid grid-cols-5 gap-2 p-2">
+												{emojis.map((emoji) => (
+													<Button key={emoji} variant="ghost" size="sm" className="text-lg">
+														{emoji}
+													</Button>
+												))}
+											</div>
+										</PopoverContent>
+									</Popover>
+									<TooltipProvider>
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<Button variant="ghost" size="sm" onClick={() => setReplyTo(msg)}>
+													<Reply className="h-4 w-4" />
+												</Button>
+											</TooltipTrigger>
+											<TooltipContent>
+												<p>Reply</p>
+											</TooltipContent>
+										</Tooltip>
+									</TooltipProvider>
+									<TooltipProvider>
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<Button variant="ghost" size="sm">
+													<Flag className="h-4 w-4 text-red-500" />
+												</Button>
+											</TooltipTrigger>
+											<TooltipContent>
+												<p>Flag message</p>
+											</TooltipContent>
+										</Tooltip>
+									</TooltipProvider>
+								</div>
+							)}
+						</div>
+					))}
+					{showScrollToBottom && (
+						<div className="sticky bottom-0 z-10 flex justify-center py-2 bg-gradient-to-t from-background to-transparent">
+							<Button variant="secondary" size="sm" className="rounded-full shadow-md" onClick={scrollToBottom}>
+								<ArrowDown className="h-4 w-4 mr-2" />
+								View recent messages
+							</Button>
+						</div>
+					)}
+				</div>
 
 				<footer className="p-2 border-t border-border">
 					{replyTo && (
 						<div className="flex items-center justify-between bg-muted p-2 rounded mb-2">
 							<div className="flex items-center space-x-2">
 								<Reply className="h-4 w-4 text-muted-foreground" />
-								<span className="text-sm text-muted-foreground">Replying to {replyTo.Values.From.Username}</span>
+								<span className="text-sm text-muted-foreground">Replying to {replyTo.from.Username}</span>
 							</div>
 							<Button variant="ghost" size="sm" onClick={() => setReplyTo(null)}>
 								<X className="h-4 w-4" />
 							</Button>
 						</div>
+					)}
+
+					{alert && alert.flag && (
+						<Alert variant={alert.type === "error" ? "destructive" : "default"} className="mb-2">
+							<AlertCircle className="h-4 w-4" />
+							<AlertTitle>{alert.type === "error" ? "Error" : "Success"}</AlertTitle>
+							<AlertDescription>{alert.message}</AlertDescription>
+							<Button
+								variant="ghost"
+								size="sm"
+								className="absolute top-2 right-2"
+								onClick={() => setAlert({ flag: false, message: "", type: "success" })}
+							>
+								<X className="h-4 w-4" />
+							</Button>
+						</Alert>
 					)}
 
 					<div className="flex items-end space-x-2">
@@ -404,6 +357,12 @@ export function ChatInterface({
 							className="flex-1 min-h-[40px] max-h-[120px] resize-none"
 							value={message}
 							onChange={handleMessageChange}
+							onKeyDown={(evt) => {
+								if (evt.key === "Enter") {
+									evt.preventDefault();
+									sendMessage();
+								}
+							}}
 						/>
 						<Popover>
 							<PopoverTrigger asChild>
