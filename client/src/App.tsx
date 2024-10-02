@@ -43,15 +43,14 @@ function App() {
 			if (message.action === "UPDATE_URL" && message.url) {
 				let url = sanitizeSiteUrl(message.url);
 				setState((prevState) => ({ ...prevState, currentURL: url, hasMoreMessages: false, nextBookmark: "" }));
+
 				// @ts-ignore
+				let port = chrome.runtime.connect({ name: "mySidePanel" });
 
-				// // @ts-ignore
-				// let port = chrome.runtime.connect({ name: "mySidePanel" });
-
-				// // Trigger the disconnect explicitly when side panel is closed
-				// window.addEventListener("beforeunload", () => {
-				// 	port.disconnect();
-				// });
+				// Trigger the disconnect explicitly when side panel is closed
+				window.addEventListener("beforeunload", () => {
+					port.disconnect();
+				});
 				setChat([]);
 				await registerUser(url);
 				await getOldMessages(url);
