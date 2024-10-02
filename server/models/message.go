@@ -101,7 +101,7 @@ func FlagMessage(messageID primitive.ObjectID, userID interface{}) (*mongo.Updat
 }
 
 // GetLast50Messages returns the last 50 messages for a specific channel, starting from a given message ID
-func GetMessages(limit int64, channel string, bookmarkID string) ([]MessageModel, error) {
+func GetMessages(limit int64, channel string, bookmarkID string) ([]MessageModel, string, bool, error) {
 
 	filter := bson.M{
 		"channel": channel,
@@ -112,20 +112,36 @@ func GetMessages(limit int64, channel string, bookmarkID string) ([]MessageModel
 		filter["_id"] = bson.M{"$lt": bookmarkID} // Get messages with IDs less than the bookmark
 	}
 
-	opts := options.Find().SetLimit(limit).SetSort(bson.M{"_id": -1}) // Sort by ID descending (newer first)
+	opts := options.Find().SetLimit(limit + 1).SetSort(bson.M{"_id": -1}) // Sort by ID descending (newer first)
 
 	cursor, err := messageService.Collection.Find(messageService.ctx, filter, opts)
 	if err != nil {
-		return nil, err
+		return nil, "", false, err
 	}
 	defer cursor.Close(messageService.ctx)
 
 	var messages []MessageModel
 	if err := cursor.All(messageService.ctx, &messages); err != nil {
-		return nil, err
+		return nil, "", false, err
 	}
 
-	return messages, nil
+	// Check if we fetched more than the limit
+	hasMoreMessages := len(messages) > int(limit)
+
+	// If there are more messages, remove the extra message from the result
+	if hasMoreMessages {
+		messages = messages[:limit]
+	}
+
+	// Get the last message's ID (bookmark ID)
+	var lastMessageID string
+	if len(messages) > 0 {
+		lastMessageID = messages[len(messages)-1].Id.String()
+	} else {
+		lastMessageID = primitive.NilObjectID.String()
+	}
+
+	return messages, lastMessageID, hasMoreMessages, nil
 }
 
 func ListenChannel(channelId string) {
