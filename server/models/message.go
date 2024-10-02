@@ -109,7 +109,12 @@ func GetMessages(limit int64, channel string, bookmarkID string) ([]MessageModel
 
 	// If bookmarkID is not the zero value, add it to the filter
 	if bookmarkID != "" {
-		filter["_id"] = bson.M{"$lt": bookmarkID} // Get messages with IDs less than the bookmark
+		// Convert the string to ObjectID
+		objectID, err := primitive.ObjectIDFromHex(bookmarkID)
+		if err != nil {
+			fmt.Println("Invalid ObjectID:", err)
+		}
+		filter["_id"] = bson.M{"$lt": objectID} // Get messages with IDs less than the bookmark
 	}
 
 	log.Debug("filter -- ", filter)
