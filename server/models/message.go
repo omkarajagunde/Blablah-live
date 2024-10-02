@@ -112,6 +112,8 @@ func GetMessages(limit int64, channel string, bookmarkID string) ([]MessageModel
 		filter["_id"] = bson.M{"$lt": bookmarkID} // Get messages with IDs less than the bookmark
 	}
 
+	log.Debug("filter -- ", filter)
+
 	opts := options.Find().SetLimit(limit + 1).SetSort(bson.M{"_id": -1}) // Sort by ID descending (newer first)
 
 	cursor, err := messageService.Collection.Find(messageService.ctx, filter, opts)
