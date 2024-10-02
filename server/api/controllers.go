@@ -276,6 +276,8 @@ func (c *ChatController) UpdateUser(ctx *fiber.Ctx) error {
 					mutex.Lock()
 					db.Connections[userId].ActiveSite = siteId
 					db.Connections[userId].IsActive = false
+					db.Connections[userId].Conn.Close()
+					fmt.Printf("User went offline: %s\n", userId)
 					mutex.Unlock()
 				}
 			}
