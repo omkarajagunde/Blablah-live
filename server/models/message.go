@@ -82,31 +82,44 @@ func AddRemoveReaction(messageID string, reactionKey string, userID string) (*mo
 		userList = []interface{}{}
 	}
 
-	// Check if the userID is already in the array
+	// Flag to check if the user was already present
 	userExists := false
 	updatedUserList := []interface{}{}
+
+	// Check if the userID is already in the list and remove it if found
 	for _, u := range userList {
 		if u == userID {
-			userExists = true
+			userExists = true // User exists, mark for removal
 		} else {
-			updatedUserList = append(updatedUserList, u)
+			updatedUserList = append(updatedUserList, u) // Keep other users
 		}
 	}
 
-	// If user exists, remove them from the list, otherwise, add them
+	// If user is not found, add them to the list, otherwise they've been removed
 	if !userExists {
 		updatedUserList = append(updatedUserList, userID)
 	}
 
-	fmt.Printf("updatedUserList - %s", updatedUserList)
+	// Update the reactions map accordingly
+	update := bson.M{}
 
-	// Update the reaction with the modified user list
-	update := bson.M{
-		"$set": bson.M{
-			"reactions." + reactionKey: updatedUserList,
-			"updated_at":               time.Now(),
-		},
+	if len(updatedUserList) == 0 {
+		// If no users are left for the reaction, remove the reaction from the map
+		update = bson.M{
+			"$unset": bson.M{"reactions." + reactionKey: ""},
+			"$set":   bson.M{"updated_at": time.Now()},
+		}
+	} else {
+		// Otherwise, update the reaction with the new user list
+		update = bson.M{
+			"$set": bson.M{
+				"reactions." + reactionKey: updatedUserList,
+				"updated_at":               time.Now(),
+			},
+		}
 	}
+
+	fmt.Printf("update -- %s\n", update)
 
 	// Update the document in the database
 	result, err := messageService.Collection.UpdateOne(messageService.ctx, filter, update)
