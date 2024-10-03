@@ -53,7 +53,19 @@ func main() {
 			// Get the number of running Goroutines
 			numGoroutines := runtime.NumGoroutine()
 			fmt.Printf("Number of Running Goroutines: %d\n", numGoroutines)
-			fmt.Println(runtime.GOMAXPROCS(runtime.NumCPU() - 1))
+			// Get the current GOMAXPROCS value
+			currentValue := runtime.GOMAXPROCS(0)
+
+			fmt.Printf("Current GOMAXPROCS value: %d\n", currentValue)
+
+			// Set GOMAXPROCS to utilize all available CPU cores
+			maxCores := runtime.NumCPU()
+			fmt.Printf("maxCores value: %d\n", maxCores)
+			newValue := maxCores - 2
+
+			runtime.GOMAXPROCS(newValue)
+			fmt.Printf("Updated GOMAXPROCS value: %d\n", runtime.GOMAXPROCS(0))
+
 		}
 	}()
 
