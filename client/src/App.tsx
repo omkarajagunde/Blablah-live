@@ -11,14 +11,12 @@ function App() {
 		nextBookmark: string | null;
 		chat: ChatMessage[];
 		updateType: string;
-		isChatLoading: boolean;
 	}>({
 		currentURL: "",
 		hasMoreMessages: false,
 		nextBookmark: "",
 		chat: [],
-		updateType: "",
-		isChatLoading: true
+		updateType: ""
 	});
 	const appReadyRef = useRef<boolean>(false);
 
@@ -139,7 +137,6 @@ function App() {
 	};
 
 	const getOldMessages = async (url: string) => {
-		if (state.chat.length === 0) setState((prevState) => ({ ...prevState, isChatLoading: true }));
 		// Get messages
 		let userId = await getItemFromChromeStorage("user_id");
 		const headers: { [key: string]: string } = {};
@@ -198,8 +195,7 @@ function App() {
 							hasMoreMessages: resp.data.hasMore,
 							nextBookmark: resp.data.nextBookmark,
 							chat: JSON.parse(JSON.stringify(chatArray)),
-							updateType: "insertUp",
-							isChatLoading: false
+							updateType: "insertUp"
 						}));
 					}
 				})
@@ -215,7 +211,6 @@ function App() {
 			updateType={state.updateType}
 			hasMoreMessages={state.hasMoreMessages}
 			handleLoadMessages={getOldMessages}
-			isChatLoading={state.isChatLoading}
 		/>
 	);
 }

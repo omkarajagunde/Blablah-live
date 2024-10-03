@@ -5,12 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-// import {
-// 	DropdownMenu,
-// 	DropdownMenuContent,
-// 	DropdownMenuItem,
-// 	DropdownMenuTrigger
-// } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -19,9 +13,7 @@ import {
 	Sun,
 	Moon,
 	Send,
-	// MoreVertical,
 	SmilePlus,
-	// ExternalLink,
 	Settings,
 	Flag,
 	Reply,
@@ -29,14 +21,12 @@ import {
 	ChevronDown,
 	ChevronUp,
 	ArrowUp,
-	// MessageCircle,
 	ArrowDown,
 	AlertCircle
 } from "lucide-react";
 import axios from "axios";
 import { ChatMessage, getItemFromChromeStorage } from "@/lib/utils";
 import { Alert, AlertTitle, AlertDescription } from "./ui/alert";
-import { Skeleton } from "./ui/skeleton";
 
 const emojis = ["😀", "😂", "😍", "🤔", "👍", "👎", "❤️", "🎉", "🔥", "👀"];
 const emojiNames = [
@@ -64,8 +54,7 @@ export function ChatInterface({
 	setChat,
 	hasMoreMessages,
 	handleLoadMessages,
-	updateType,
-	isChatLoading
+	updateType
 }: {
 	currentURL: string | null;
 	chat: ChatMessage[];
@@ -73,13 +62,12 @@ export function ChatInterface({
 	hasMoreMessages: boolean;
 	handleLoadMessages: Function;
 	updateType: string;
-	isChatLoading: boolean;
 }) {
 	const [darkMode, setDarkMode] = useState(true);
 	const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
 	const [message, setMessage] = useState("");
 	const [showEmojiSuggestions, setShowEmojiSuggestions] = useState(false);
-	const [pinnedExpanded, setPinnedExpanded] = useState(false);
+	const [pinnedExpanded, setPinnedExpanded] = useState(true);
 	const [showScrollToBottom, setShowScrollToBottom] = useState(true);
 	const [hoveredMessage, setHoveredMessage] = useState(null);
 	const [alert, setAlert] = useState<{ flag: boolean; message: string; type: string }>({
@@ -245,8 +233,7 @@ export function ChatInterface({
 					<CollapsibleContent className="p-2 bg-secondary/50">
 						{pinnedExpanded ? (
 							<>
-								<p className="text-sm">Important: Team meeting at 3 PM today!</p>
-								<p className="text-sm">Reminder: Submit your weekly reports by Friday.</p>
+								<p className="text-sm">Are you liking the plugin? Provide feedback - </p>
 							</>
 						) : (
 							<p className="text-sm truncate">Important: Team meeting at 3 PM today!</p>
