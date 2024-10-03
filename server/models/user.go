@@ -56,30 +56,6 @@ func CreateUserService(collection *mongo.Collection, ctx context.Context) {
 	userService = UserService{Collection: collection, ctx: ctx}
 }
 
-func get(tag string, url string, result chan map[string]string) {
-	// Call GET API
-	res, err := http.Get(url)
-	if err != nil {
-		log.Error(err.Error())
-		result <- map[string]string{
-			"tag":   tag,
-			"value": "{}",
-		}
-	}
-
-	// Decode the retrived profile pic
-	defer res.Body.Close()
-	str, readErr := io.ReadAll(res.Body)
-	if readErr != nil {
-		log.Error(err.Error())
-	}
-
-	result <- map[string]string{
-		"tag":   tag,
-		"value": string(str),
-	}
-}
-
 func NewUser(ctx *fiber.Ctx) (*UserModel, bool) {
 
 	ch := make(chan map[string]string)
@@ -88,14 +64,21 @@ func NewUser(ctx *fiber.Ctx) (*UserModel, bool) {
 	username := gofakeit.Gamertag()
 	ipUrl := strings.Replace(C.IP_INFO_URL, "REPLACE_IP_HERE", ctx.IP(), 1)
 
-	go get("ipinfo", ipUrl, ch)
+	var str []byte
+	res, err := http.Get(ipUrl)
+	if err != nil {
+		log.Error(err.Error())
+		str = []byte("{}")
+	}
 
-	result := map[string]string{}
-	temp := <-ch
-	result[temp["tag"]] = temp["value"]
+	defer res.Body.Close()
+	str, readErr := io.ReadAll(res.Body)
+	if readErr != nil {
+		log.Error(err.Error())
+	}
 
 	// Convert string to map
-	ipinfoMap, err := utils.Convert_JSONStringToMap(result["ipinfo"])
+	ipinfoMap, err := utils.Convert_JSONStringToMap(string(str))
 	if err != nil {
 		log.Error("Error:", err, ipinfoMap)
 		ipinfoMap = map[string]string{}
