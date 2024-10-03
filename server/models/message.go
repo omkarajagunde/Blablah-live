@@ -214,11 +214,15 @@ func GetMessages(limit int64, channel string, bookmarkID string) ([]MessageModel
 }
 
 func ListenAllChanges() {
+
+	// Define the options for the change stream
+	options := options.ChangeStream().SetFullDocument(options.UpdateLookup) // Retrieve the full document
+
 	// Define the pipeline without any filters to capture all changes
 	pipeline := mongo.Pipeline{}
 
 	// Start the change stream
-	changeStream, err := messageService.Collection.Watch(context.TODO(), pipeline)
+	changeStream, err := messageService.Collection.Watch(context.TODO(), pipeline, options)
 	if err != nil {
 		log.Fatalf("Error watching collection: %v", err)
 	}
@@ -242,7 +246,16 @@ func ListenAllChanges() {
 			switch operationType {
 			case "insert":
 				fmt.Println("An insert operation occurred.", event)
-				// Handle insert logic here
+				// for _, userConn := range db.Connections {
+				// 	if doc, docExists := event["fullDocument"].(bson.M); docExists {
+				// 		if channel, channelExists := doc["channel"].(string); channelExists {
+				// 			if userConn.IsActive && userConn.ActiveSite == channel {
+				// 				log.Debug("userConn - ", userConn)
+				// 				userConn.Conn.WriteJSON(doc)
+				// 			}
+				// 		}
+				// 	}
+				// }
 			case "update":
 				fmt.Println("An update operation occurred.", event)
 				// Handle update logic here
