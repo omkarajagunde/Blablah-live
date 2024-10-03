@@ -218,6 +218,11 @@ func ListenChannel(channelId string) {
 	// Define a match stage for filtering by channel
 	matchStage := bson.D{{"$match", bson.D{
 		{"fullDocument.channel", channelId}, // Match documents where the 'channel' field equals the provided channel name
+		{"$or", bson.A{
+			bson.D{{"operationType", "insert"}},
+			bson.D{{"operationType", "update"}},
+			bson.D{{"operationType", "delete"}},
+		}},
 	}}}
 
 	// Define the pipeline with the match stage
