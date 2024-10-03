@@ -18,7 +18,7 @@ var (
 func MongoInit(colName string) (*mongo.Collection, context.Context) {
 
 	if db != nil {
-		fmt.Printf("Connected to collection - %s", colName)
+		fmt.Printf("Connected to collection - %s\n", colName)
 		return db.Collection(colName), mongoCtx
 	}
 
@@ -34,6 +34,6 @@ func MongoInit(colName string) (*mongo.Collection, context.Context) {
 	}
 
 	db = client.Database(os.Getenv("MONGO_DB_NAME"))
-	fmt.Printf("Connected to collection - %s", colName)
+	fmt.Printf("Connected to collection - %s\n", colName)
 	return db.Collection(colName), mongoCtx
 }

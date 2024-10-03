@@ -29,7 +29,7 @@ func main() {
 	}))
 
 	// Connect redis DB
-	db.RedisInit()
+	// db.RedisInit()
 
 	// Connect Mongo DB
 	messageCollection, ctx := db.MongoInit("messages")
