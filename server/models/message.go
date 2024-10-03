@@ -119,7 +119,7 @@ func AddRemoveReaction(messageID string, reactionKey string, userID string) (*mo
 		}
 	}
 
-	fmt.Printf("update -- %s\n", update)
+	fmt.Printf("update -- %s\n updatedUserList - %s\n", update, updatedUserList)
 
 	// Update the document in the database
 	result, err := messageService.Collection.UpdateOne(messageService.ctx, filter, update)
