@@ -48,7 +48,6 @@ func WriteMessageToChannel(message MessageModel) interface{} {
 		log.Error("%s", streamErr)
 	}
 
-	log.Info("Msg written:", result.InsertedID)
 	return result.InsertedID
 }
 
