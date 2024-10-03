@@ -56,6 +56,8 @@ func main() {
 		}
 	}()
 
+	go models.ListenAllChanges()
+
 	PORT := os.Getenv("PORT")
 	log.Fatal(app.Listen(":" + PORT))
 

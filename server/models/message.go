@@ -213,16 +213,59 @@ func GetMessages(limit int64, channel string, bookmarkID string) ([]MessageModel
 	return messages, lastMessageID, hasMoreMessages, nil
 }
 
+func ListenAllChanges() {
+	// Define the pipeline without any filters to capture all changes
+	pipeline := mongo.Pipeline{}
+
+	// Start the change stream
+	changeStream, err := messageService.Collection.Watch(context.TODO(), pipeline)
+	if err != nil {
+		log.Fatalf("Error watching collection: %v", err)
+	}
+	defer changeStream.Close(context.TODO())
+
+	fmt.Println("Watching for all changes in the collection...")
+
+	// Listen for changes
+	for changeStream.Next(context.TODO()) {
+		var event bson.M
+		if err := changeStream.Decode(&event); err != nil {
+			log.Errorf("Error decoding change stream event: %v", err)
+			continue
+		}
+
+		// Process the change event (insert, update, delete, etc.)
+		fmt.Printf("Received change event: %v\n", event)
+
+		operationType, ok := event["operationType"]
+		if ok {
+			switch operationType {
+			case "insert":
+				fmt.Println("An insert operation occurred.", event)
+				// Handle insert logic here
+			case "update":
+				fmt.Println("An update operation occurred.", event)
+				// Handle update logic here
+			case "delete":
+				fmt.Println("A delete operation occurred.", event)
+				// Handle delete logic here
+			default:
+				fmt.Printf("Other operation: %v\n", operationType)
+			}
+		}
+	}
+
+	// Check for errors in the change stream
+	if err := changeStream.Err(); err != nil {
+		log.Fatalf("Change stream error: %v", err)
+	}
+}
+
 func ListenChannel(channelId string) {
 
 	// Define a match stage for filtering by channel
 	matchStage := bson.D{{"$match", bson.D{
 		{"fullDocument.channel", channelId}, // Match documents where the 'channel' field equals the provided channel name
-		{"$or", bson.A{
-			bson.D{{"operationType", "insert"}},
-			bson.D{{"operationType", "update"}},
-			bson.D{{"operationType", "delete"}},
-		}},
 	}}}
 
 	// Define the pipeline with the match stage
