@@ -239,13 +239,13 @@ func ListenAllChanges() {
 		}
 
 		// Process the change event (insert, update, delete, etc.)
-		fmt.Printf("Received change event: %v\n", event)
+		// fmt.Printf("Received change event: %v\n", event)
 
 		operationType, ok := event["operationType"]
 		if ok {
 			switch operationType {
 			case "insert":
-				fmt.Println("An insert operation occurred.", event)
+				// fmt.Println("An insert operation occurred.", event)
 				for _, userConn := range db.Connections {
 					if doc, docExists := event["fullDocument"].(bson.M); docExists {
 						if channel, channelExists := doc["channel"].(string); channelExists {
@@ -259,7 +259,7 @@ func ListenAllChanges() {
 					}
 				}
 			case "update":
-				fmt.Println("An update operation occurred.", event)
+				// fmt.Println("An update operation occurred.", event)
 				for _, userConn := range db.Connections {
 					if doc, docExists := event["fullDocument"].(bson.M); docExists {
 						if channel, channelExists := doc["channel"].(string); channelExists {
