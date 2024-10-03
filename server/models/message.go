@@ -77,8 +77,6 @@ func AddRemoveReaction(messageID string, reactionKey string, userID string) (*mo
 		reactions = bson.M{}
 	}
 
-	fmt.Printf("reactions : %s\n", reactions)
-
 	// Get the current list of users for the given reactionKey
 	userList, ok := reactions.(bson.M)[reactionKey]
 	if !ok {
@@ -89,11 +87,8 @@ func AddRemoveReaction(messageID string, reactionKey string, userID string) (*mo
 	userExists := false
 	updatedUserList := []string{}
 
-	fmt.Printf("userList - %s\n", userList)
-
 	// Check if the userID is already in the list and remove it if found
 	for _, u := range userList.(primitive.A) {
-		fmt.Printf("for - %s -- %s", u, userID)
 		if u.(string) == userID {
 			userExists = true // User exists, mark for removal
 		} else {
@@ -124,8 +119,6 @@ func AddRemoveReaction(messageID string, reactionKey string, userID string) (*mo
 			},
 		}
 	}
-
-	fmt.Printf("update -- %s\n updatedUserList - %s\n", update, updatedUserList)
 
 	// Update the document in the database
 	result, err := messageService.Collection.UpdateOne(messageService.ctx, filter, update)
@@ -250,19 +243,29 @@ func ListenChannel(channelId string) {
 		// Process the change event (insert, update, delete, etc.)
 		fmt.Printf("Received change event: %v\n", event)
 
-		operationType, ok := event["operationType"]
-		if ok && operationType == "insert" {
-			for _, userConn := range db.Connections {
-				if doc, docExists := event["fullDocument"].(bson.M); docExists {
-					if channel, channelExists := doc["channel"].(string); channelExists {
-						if userConn.IsActive && userConn.ActiveSite == channel {
-							log.Debug("userConn - ", userConn)
-							userConn.Conn.WriteJSON(doc)
+		operationType, ok := event["operationType"].(string)
+		if ok {
+			switch operationType {
+			case "insert":
+				for _, userConn := range db.Connections {
+					if doc, docExists := event["fullDocument"].(bson.M); docExists {
+						if channel, channelExists := doc["channel"].(string); channelExists {
+							if userConn.IsActive && userConn.ActiveSite == channel {
+								log.Debug("userConn - ", userConn)
+								userConn.Conn.WriteJSON(doc)
+							}
 						}
 					}
 				}
+			case "update":
+				fmt.Printf("Update event: %v\n", event)
+			case "delete":
+				//
+			default:
+				log.Debugf("Unhandled operation type: %s", operationType)
 			}
 		}
+
 	}
 
 	// Check for errors in the change stream
