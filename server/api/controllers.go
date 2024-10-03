@@ -67,7 +67,7 @@ func (c *ChatController) Ws(conn *websocket.Conn) {
 		if user != nil && user.ActiveSite != "" {
 			_, ok := channels[user.ActiveSite]
 			if !ok {
-				go models.ListenChannel(user.ActiveSite)
+				// go models.ListenChannel(user.ActiveSite)
 				channels[user.ActiveSite] = true
 			}
 		}
@@ -297,7 +297,7 @@ func (c *ChatController) UpdateUser(ctx *fiber.Ctx) error {
 
 					_, channelExists := channels[user.ActiveSite]
 					if !channelExists {
-						go models.ListenChannel(user.ActiveSite)
+						// go models.ListenChannel(user.ActiveSite)
 						channels[user.ActiveSite] = true
 					}
 

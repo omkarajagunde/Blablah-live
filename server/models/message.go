@@ -246,19 +246,32 @@ func ListenAllChanges() {
 			switch operationType {
 			case "insert":
 				fmt.Println("An insert operation occurred.", event)
-				// for _, userConn := range db.Connections {
-				// 	if doc, docExists := event["fullDocument"].(bson.M); docExists {
-				// 		if channel, channelExists := doc["channel"].(string); channelExists {
-				// 			if userConn.IsActive && userConn.ActiveSite == channel {
-				// 				log.Debug("userConn - ", userConn)
-				// 				userConn.Conn.WriteJSON(doc)
-				// 			}
-				// 		}
-				// 	}
-				// }
+				for _, userConn := range db.Connections {
+					if doc, docExists := event["fullDocument"].(bson.M); docExists {
+						if channel, channelExists := doc["channel"].(string); channelExists {
+							if userConn.IsActive && userConn.ActiveSite == channel {
+								userConn.Conn.WriteJSON(map[string]interface{}{
+									"doc":  doc,
+									"type": "insert",
+								})
+							}
+						}
+					}
+				}
 			case "update":
 				fmt.Println("An update operation occurred.", event)
-				// Handle update logic here
+				for _, userConn := range db.Connections {
+					if doc, docExists := event["fullDocument"].(bson.M); docExists {
+						if channel, channelExists := doc["channel"].(string); channelExists {
+							if userConn.IsActive && userConn.ActiveSite == channel {
+								userConn.Conn.WriteJSON(map[string]interface{}{
+									"doc":  doc,
+									"type": "update",
+								})
+							}
+						}
+					}
+				}
 			case "delete":
 				fmt.Println("A delete operation occurred.", event)
 				// Handle delete logic here
