@@ -80,7 +80,7 @@ func AddRemoveReaction(messageID string, reactionKey string, userID string) (*mo
 	fmt.Printf("reactions : %s\n", reactions)
 
 	// Get the current list of users for the given reactionKey
-	userList, ok := reactions.(map[string]interface{})[reactionKey]
+	userList, ok := reactions.(bson.M)[reactionKey]
 	if !ok {
 		userList = []string{}
 	}
