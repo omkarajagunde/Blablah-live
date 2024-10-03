@@ -98,6 +98,8 @@ func AddRemoveReaction(messageID string, reactionKey string, userID string) (*mo
 		updatedUserList = append(updatedUserList, userID)
 	}
 
+	fmt.Printf("updatedUserList - %s", updatedUserList)
+
 	// Update the reaction with the modified user list
 	update := bson.M{
 		"$set": bson.M{
