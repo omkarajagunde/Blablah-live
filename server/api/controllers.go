@@ -145,7 +145,7 @@ func (c *ChatController) GetMessages(ctx *fiber.Ctx) error {
 		})
 	}
 
-	chatArray, bookmark, hasMoreMessages, retrievalErr := models.GetMessages(10, siteId, bookmark)
+	chatArray, bookmark, hasMoreMessages, retrievalErr := models.GetMessages(25, siteId, bookmark)
 	if retrievalErr != nil {
 		return ctx.Status(500).JSON(fiber.Map{
 			"message": retrievalErr,

@@ -47,5 +47,6 @@ export interface ChatMessage {
         }
         | {},
     flagged: string[],
-    message: string
+    message: string,
+    channel: string,
 }

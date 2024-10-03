@@ -36,6 +36,7 @@ import {
 import axios from "axios";
 import { ChatMessage, getItemFromChromeStorage } from "@/lib/utils";
 import { Alert, AlertTitle, AlertDescription } from "./ui/alert";
+import { Skeleton } from "./ui/skeleton";
 
 const emojis = ["😀", "😂", "😍", "🤔", "👍", "👎", "❤️", "🎉", "🔥", "👀"];
 const emojiNames = [
@@ -62,13 +63,17 @@ export function ChatInterface({
 	chat,
 	setChat,
 	hasMoreMessages,
-	handleLoadMessages
+	handleLoadMessages,
+	updateType,
+	isChatLoading
 }: {
 	currentURL: string | null;
 	chat: ChatMessage[];
 	setChat: Function;
 	hasMoreMessages: boolean;
 	handleLoadMessages: Function;
+	updateType: string;
+	isChatLoading: boolean;
 }) {
 	const [darkMode, setDarkMode] = useState(true);
 	const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
@@ -104,7 +109,8 @@ export function ChatInterface({
 	}, []);
 
 	useEffect(() => {
-		scrollToBottom();
+		if (updateType === "insertUp") scrollToBottom("up");
+		if (updateType === "insertDown") scrollToBottom("down");
 	}, [chat]);
 
 	const handleMessageChange = (e: any) => {
@@ -116,9 +122,15 @@ export function ChatInterface({
 		setMessage(message + emoji);
 		setShowEmojiSuggestions(false);
 	};
-	const scrollToBottom = () => {
+	const scrollToBottom = (dir = "down") => {
 		if (chatRef.current) {
-			chatRef.current.scrollTop = chatRef.current.scrollHeight;
+			if (dir === "down") {
+				chatRef.current.scrollTop = chatRef.current.scrollHeight;
+			}
+
+			if (dir === "up") {
+				chatRef.current.scrollTop = 0;
+			}
 		}
 	};
 
@@ -145,22 +157,19 @@ export function ChatInterface({
 					{ ...messageObj },
 					{ headers }
 				);
-				setChat([
-					...chat,
-					{
-						_id: response.data.MsgId,
-						created_at: messageObj.Timestamp,
-						updated_at: messageObj.Timestamp,
-						from: messageObj.From,
-						flagged: messageObj.Flagged,
-						channel: messageObj.ChannelId,
-						message: messageObj.Message,
-						to: messageObj.To,
-						reactions: messageObj.Reactions
-					}
-				]);
+				setChat({
+					_id: response.data.MsgId,
+					created_at: messageObj.Timestamp,
+					updated_at: messageObj.Timestamp,
+					from: messageObj.From,
+					flagged: messageObj.Flagged,
+					channel: messageObj.ChannelId,
+					message: messageObj.Message,
+					to: messageObj.To,
+					reactions: messageObj.Reactions
+				});
 				setMessage("");
-				scrollToBottom();
+				scrollToBottom("down");
 			}
 		} catch (error) {
 			console.log(error);
@@ -178,6 +187,26 @@ export function ChatInterface({
 
 	const loadMoreMessages = () => {
 		handleLoadMessages();
+	};
+
+	const handleReaction = async (emoji: string) => {
+		let userId = await getItemFromChromeStorage("user_id");
+		try {
+			setHoveredMessage(null);
+			const headers: { [key: string]: string } = {};
+			if (userId && hoveredMessage) {
+				// @ts-ignore
+				headers["X-Id"] = userId;
+				let response = await axios.post(
+					`https://blablah-live-production.up.railway.app/react/${hoveredMessage}`,
+					{ emoji },
+					{ headers }
+				);
+				console.log("AddReactions response -- ", response);
+			}
+		} catch (error) {
+			console.log("AddReactions error -- ", error);
+		}
 	};
 
 	return (
@@ -227,16 +256,17 @@ export function ChatInterface({
 
 				<div className="flex-1 overflow-y-auto space-y-4 px-4 my-2 scroll-smooth" ref={chatRef}>
 					{hasMoreMessages && (
-						<div className="sticky top-0 z-10 flex justify-center py-2 bg-gradient-to-b from-background to-transparent">
+						<div className="flex justify-center py-2 bg-gradient-to-b from-background to-transparent">
 							<Button variant="secondary" size="sm" className="rounded-full shadow-md" onClick={loadMoreMessages}>
 								<ArrowUp className="h-4 w-4 mr-2" />
 								Load more messages
 							</Button>
 						</div>
 					)}
+
 					{chat.map((msg: any) => (
 						<div
-							key={msg.from.Id}
+							key={msg._id}
 							id={msg._id}
 							className="flex items-start space-x-2 group relative rounded-lg"
 							onMouseEnter={() => setHoveredMessage(msg._id)}
@@ -257,16 +287,22 @@ export function ChatInterface({
 									<p className="mt-1 text-sm break-all">{msg.message}</p>
 									{msg.sticker && <img src={msg.sticker} alt="Sticker" className="mt-2 max-w-[200px] rounded" />}
 								</div>
-								<div className="flex items-center mt-2 space-x-1">
+								<div className="flex items-center flex-wrap">
 									{Object.entries(msg.reactions).map(([emoji, count]: [any, any]) => (
-										<Button key={emoji} variant="secondary" size="sm" className="text-xs">
+										<Button
+											key={emoji}
+											variant="secondary"
+											size="sm"
+											className="text-xs mr-1 mt-1"
+											onClick={() => handleReaction(emoji)}
+										>
 											{emoji} {count}
 										</Button>
 									))}
 								</div>
 							</div>
 							{hoveredMessage === msg._id && (
-								<div className="absolute right-2 top-2 flex items-center space-x-1 bg-background/80 backdrop-blur-sm rounded p-1">
+								<div className="absolute right-0 bottom-2 flex items-center space-x-1 bg-background/80 backdrop-blur-sm rounded p-1">
 									<Popover>
 										<PopoverTrigger asChild>
 											<Button variant="ghost" size="sm">
@@ -276,7 +312,13 @@ export function ChatInterface({
 										<PopoverContent className="w-full p-0">
 											<div className="grid grid-cols-5 gap-2 p-2">
 												{emojis.map((emoji) => (
-													<Button key={emoji} variant="ghost" size="sm" className="text-lg">
+													<Button
+														key={emoji}
+														variant="ghost"
+														size="sm"
+														className="text-lg"
+														onClick={() => handleReaction(emoji)}
+													>
 														{emoji}
 													</Button>
 												))}
@@ -311,9 +353,14 @@ export function ChatInterface({
 							)}
 						</div>
 					))}
-					{showScrollToBottom && (
+					{showScrollToBottom && chat.length > 10 && (
 						<div className="sticky bottom-0 z-10 flex justify-center py-2 bg-gradient-to-t from-background to-transparent">
-							<Button variant="secondary" size="sm" className="rounded-full shadow-md" onClick={scrollToBottom}>
+							<Button
+								variant="secondary"
+								size="sm"
+								className="rounded-full shadow-md"
+								onClick={() => scrollToBottom("down")}
+							>
 								<ArrowDown className="h-4 w-4 mr-2" />
 								View recent messages
 							</Button>

@@ -9,58 +9,103 @@ function App() {
 		currentURL: string | null;
 		hasMoreMessages: boolean;
 		nextBookmark: string | null;
+		chat: ChatMessage[];
+		updateType: string;
+		isChatLoading: boolean;
 	}>({
 		currentURL: "",
 		hasMoreMessages: false,
-		nextBookmark: ""
+		nextBookmark: "",
+		chat: [],
+		updateType: "",
+		isChatLoading: true
 	});
-	const [chat, setChat] = useState<ChatMessage[] | []>([]);
 	const appReadyRef = useRef<boolean>(false);
 
 	useEffect(() => {
-		console.log("chat: ", chat);
-	}, [chat]);
+		console.log("chat: ", state.chat);
+	}, [state.chat]);
+
+	const handleUpdateMsg = (payload: ChatMessage) => {
+		let newArray = state.chat.map((msg) => {
+			if (msg._id === payload._id) {
+				let obj: any = {};
+				if (Object.keys(payload.reactions).length > 0) {
+					Object.entries(payload.reactions).forEach((entry: any) => {
+						obj[entry[0]] = entry[1].length;
+					});
+				}
+				msg = {
+					...msg,
+					...payload,
+					reactions: obj
+				};
+			}
+			return msg;
+		});
+		setState((prevState) => ({ ...prevState, chat: newArray, updateType: "update" }));
+	};
+
+	const handleListener = async (message: { action: string; url: string; data: any | null }) => {
+		// App ready to receive events
+		// @ts-ignore
+		if (!appReadyRef.current) chrome.runtime.sendMessage({ action: "APP_READY_TO_RECEIVE_EVENT" });
+		appReadyRef.current = true;
+
+		if (message.action === "WS_MESSAGE") {
+			console.log("App:WS_MESSAGE:received :: ", message.data);
+
+			let userId = await getItemFromChromeStorage("user_id");
+			let type = message.data.type;
+			let payload: ChatMessage = message.data.doc;
+			if (type === "insert") {
+				if (userId !== payload.from.Id) {
+					setState((prevState) => ({ ...prevState, chat: [...prevState.chat, payload], updateType: "insertDown" }));
+				}
+			}
+
+			if (type === "update") {
+				handleUpdateMsg(payload);
+			}
+		}
+
+		if (message.action === "UPDATE_URL" && message.url) {
+			let url = sanitizeSiteUrl(message.url);
+			setState((prevState) => ({
+				...prevState,
+				currentURL: url,
+				hasMoreMessages: false,
+				nextBookmark: "",
+				chat: []
+			}));
+
+			// @ts-ignore
+			let port = chrome.runtime.connect({ name: "mySidePanel" });
+			// Trigger the disconnect explicitly when side panel is closed
+			window.addEventListener("beforeunload", () => {
+				port.disconnect();
+			});
+			await registerUser(url);
+			await getOldMessages(url);
+		}
+
+		return true;
+	};
 
 	useEffect(() => {
 		// Update the displayed URL when the background script sends a new URL
 
 		// @ts-ignore
-		chrome.runtime.onMessage.addListener(async (message: { action: string; url: string; data: any | null }) => {
-			// App ready to receive events
+		chrome.runtime.onMessage.addListener(handleListener);
+		return () => {
 			// @ts-ignore
-			if (!appReadyRef.current) chrome.runtime.sendMessage({ action: "APP_READY_TO_RECEIVE_EVENT" });
-			appReadyRef.current = true;
+			chrome.runtime.onMessage.removeListener(handleListener);
+		};
+	}, [state]);
 
-			if (message.action === "WS_MESSAGE") {
-				console.log("App:WS_MESSAGE:received :: ", message.data);
-
-				let userId = await getItemFromChromeStorage("user_id");
-				if (userId !== message.data.from.Id) {
-					setChat((prevState) => [...prevState, message.data]);
-				}
-			}
-
-			if (message.action === "UPDATE_URL" && message.url) {
-				let url = sanitizeSiteUrl(message.url);
-				setState((prevState) => ({ ...prevState, currentURL: url, hasMoreMessages: false, nextBookmark: "" }));
-
-				// @ts-ignore
-				let port = chrome.runtime.connect({ name: "mySidePanel" });
-
-				// Trigger the disconnect explicitly when side panel is closed
-				window.addEventListener("beforeunload", () => {
-					port.disconnect();
-				});
-				setChat([]);
-				await registerUser(url);
-				await getOldMessages(url);
-			}
-
-			return true;
-		});
-
-		console.log("Im hit");
-	}, []);
+	const setChat = (msg: ChatMessage) => {
+		setState((prevState) => ({ ...prevState, chat: [...prevState.chat, msg] }));
+	};
 
 	const registerUser = async (url: string) => {
 		// Register the user
@@ -94,6 +139,7 @@ function App() {
 	};
 
 	const getOldMessages = async (url: string) => {
+		if (state.chat.length === 0) setState((prevState) => ({ ...prevState, isChatLoading: true }));
 		// Get messages
 		let userId = await getItemFromChromeStorage("user_id");
 		const headers: { [key: string]: string } = {};
@@ -110,8 +156,7 @@ function App() {
 					}
 				)
 				.then((resp) => {
-					console.log("resp - ", resp.data.data);
-					let chatArray: any = [];
+					let chatArray: ChatMessage[] = [];
 					if (Array.isArray(resp.data.data)) {
 						resp.data.data.forEach((msg: any) => {
 							chatArray.push({
@@ -127,11 +172,34 @@ function App() {
 							});
 						});
 
-						setChat([...chatArray.reverse(), ...chat]);
+						chatArray = chatArray.map((msg: ChatMessage) => {
+							let obj: any = {};
+							if (Object.keys(msg.reactions).length > 0) {
+								Object.entries(msg.reactions).forEach((entry: any) => {
+									obj[entry[0]] = entry[1].length;
+								});
+							}
+
+							msg.reactions = obj;
+							return msg;
+						});
+
+						chatArray = [...chatArray, ...state.chat];
+						chatArray.sort(
+							(a: ChatMessage, b: ChatMessage) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+						);
+
+						chatArray = chatArray.filter(
+							(item: ChatMessage, index, self) => index === self.findIndex((i) => i._id === item._id)
+						);
+
 						setState((prevState) => ({
 							...prevState,
 							hasMoreMessages: resp.data.hasMore,
-							nextBookmark: resp.data.nextBookmark
+							nextBookmark: resp.data.nextBookmark,
+							chat: JSON.parse(JSON.stringify(chatArray)),
+							updateType: "insertUp",
+							isChatLoading: false
 						}));
 					}
 				})
@@ -142,10 +210,12 @@ function App() {
 	return (
 		<ChatInterface
 			currentURL={state.currentURL}
-			chat={chat}
+			chat={state.chat}
 			setChat={setChat}
+			updateType={state.updateType}
 			hasMoreMessages={state.hasMoreMessages}
 			handleLoadMessages={getOldMessages}
+			isChatLoading={state.isChatLoading}
 		/>
 	);
 }
