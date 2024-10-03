@@ -92,12 +92,12 @@ func AddRemoveReaction(messageID string, reactionKey string, userID string) (*mo
 	fmt.Printf("userList - %s\n", userList)
 
 	// Check if the userID is already in the list and remove it if found
-	for _, u := range userList.([]string) {
+	for _, u := range userList.(primitive.A) {
 		fmt.Printf("for - %s -- %s", u, userID)
-		if u == userID {
+		if u.(string) == userID {
 			userExists = true // User exists, mark for removal
 		} else {
-			updatedUserList = append(updatedUserList, u) // Keep other users
+			updatedUserList = append(updatedUserList, u.(string)) // Keep other users
 		}
 	}
 
