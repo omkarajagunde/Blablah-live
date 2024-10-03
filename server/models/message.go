@@ -79,14 +79,14 @@ func AddRemoveReaction(messageID string, reactionKey string, userID string) (*mo
 	fmt.Printf("reactions : %s\t message : %s\n", reactions, message)
 
 	// Get the current list of users for the given reactionKey
-	userList, ok := reactions[reactionKey].([]interface{})
+	userList, ok := reactions[reactionKey].([]string)
 	if !ok {
-		userList = []interface{}{}
+		userList = []string{}
 	}
 
 	// Flag to check if the user was already present
 	userExists := false
-	updatedUserList := []interface{}{}
+	updatedUserList := []string{}
 
 	fmt.Printf("userList - %s\n", userList)
 
