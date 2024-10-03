@@ -80,7 +80,7 @@ func AddRemoveReaction(messageID string, reactionKey string, userID string) (*mo
 	fmt.Printf("reactions : %s\n", reactions)
 
 	// Get the current list of users for the given reactionKey
-	userList, ok := reactions.(bson.M)[reactionKey].([]string)
+	userList, ok := reactions.(map[string]interface{})[reactionKey]
 	if !ok {
 		userList = []string{}
 	}
@@ -92,7 +92,7 @@ func AddRemoveReaction(messageID string, reactionKey string, userID string) (*mo
 	fmt.Printf("userList - %s\n", userList)
 
 	// Check if the userID is already in the list and remove it if found
-	for _, u := range userList {
+	for _, u := range userList.([]string) {
 		fmt.Printf("for - %s -- %s", u, userID)
 		if u == userID {
 			userExists = true // User exists, mark for removal
