@@ -72,7 +72,6 @@ func AddRemoveReaction(messageID string, reactionKey string, userID string) (*mo
 
 	// Check if the reaction array already exists
 	reactions, ok := message["reactions"]
-	fmt.Println("ok -", ok)
 	if !ok {
 		reactions = bson.M{}
 	}
@@ -80,7 +79,7 @@ func AddRemoveReaction(messageID string, reactionKey string, userID string) (*mo
 	// Get the current list of users for the given reactionKey
 	userList, ok := reactions.(bson.M)[reactionKey]
 	if !ok {
-		userList = []string{}
+		userList = primitive.A{}
 	}
 
 	// Flag to check if the user was already present
