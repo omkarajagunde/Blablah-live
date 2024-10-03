@@ -71,7 +71,7 @@ func AddRemoveReaction(messageID string, reactionKey string, userID string) (*mo
 	}
 
 	// Check if the reaction array already exists
-	reactions, ok := message["reactions"].(bson.M)
+	reactions, ok := message["reactions"].(map[string]interface{})
 	if !ok {
 		reactions = bson.M{}
 	}
