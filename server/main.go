@@ -61,9 +61,8 @@ func main() {
 			// Set GOMAXPROCS to utilize all available CPU cores
 			maxCores := runtime.NumCPU()
 			fmt.Printf("maxCores value: %d\n", maxCores)
-			newValue := maxCores - 2
 
-			runtime.GOMAXPROCS(newValue)
+			runtime.GOMAXPROCS(4)
 			fmt.Printf("Updated GOMAXPROCS value: %d\n", runtime.GOMAXPROCS(0))
 
 		}
