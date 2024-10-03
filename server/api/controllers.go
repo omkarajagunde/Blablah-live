@@ -163,9 +163,39 @@ func (c *ChatController) GetMessages(ctx *fiber.Ctx) error {
 
 // AddRemoveReactions handles adding or removing reactions to messages
 func (c *ChatController) AddRemoveReactions(ctx *fiber.Ctx) error {
+
+	userId := ctx.Get("X-Id", "")
+	msgId := ctx.Params("MessageId", "")
+
+	if userId == "" {
+		return ctx.Status(400).JSON(fiber.Map{
+			"message": "User id not passed",
+			"status":  400,
+		})
+	}
+
+	var reaction map[string]string
+	// Parse the JSON body into the struct
+	if err := ctx.BodyParser(&reaction); err != nil {
+		log.Error("err - ", err)
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  fiber.StatusBadRequest,
+			"message": "Failed to parse body",
+		})
+	}
+
+	updatedRecord, updateErr := models.AddRemoveReaction(msgId, reaction["emoji"], userId)
+	if updateErr != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  fiber.StatusInternalServerError,
+			"message": updateErr,
+		})
+	}
+
 	return ctx.Status(200).JSON(fiber.Map{
 		"message": "Added reaction successfully",
 		"status":  200,
+		"data":    updatedRecord,
 	})
 }
 

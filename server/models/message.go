@@ -53,14 +53,65 @@ func WriteMessageToChannel(message MessageModel) interface{} {
 }
 
 // AddReaction adds or updates a reaction in the message's reactions map
-func AddReaction(messageID primitive.ObjectID, reactionKey string, count interface{}) (*mongo.UpdateResult, error) {
-	filter := bson.M{"_id": messageID}
-	update := bson.M{"$set": bson.M{"reactions." + reactionKey: count, "updated_at": time.Now()}}
+func AddRemoveReaction(messageID string, reactionKey string, userID string) (*mongo.UpdateResult, error) {
 
+	// Convert the string to ObjectID
+	objectID, stringToMongIDErr := primitive.ObjectIDFromHex(messageID)
+	if stringToMongIDErr != nil {
+		fmt.Println("Invalid ObjectID passed: ", stringToMongIDErr)
+	}
+
+	filter := bson.M{"_id": objectID}
+
+	// Retrieve the current document to check the reaction state
+	var message bson.M
+	err := messageService.Collection.FindOne(messageService.ctx, filter).Decode(&message)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if the reaction array already exists
+	reactions, ok := message["reactions"].(bson.M)
+	if !ok {
+		reactions = bson.M{}
+	}
+
+	// Get the current list of users for the given reactionKey
+	userList, ok := reactions[reactionKey].([]interface{})
+	if !ok {
+		userList = []interface{}{}
+	}
+
+	// Check if the userID is already in the array
+	userExists := false
+	updatedUserList := []interface{}{}
+	for _, u := range userList {
+		if u == userID {
+			userExists = true
+		} else {
+			updatedUserList = append(updatedUserList, u)
+		}
+	}
+
+	// If user exists, remove them from the list, otherwise, add them
+	if !userExists {
+		updatedUserList = append(updatedUserList, userID)
+	}
+
+	// Update the reaction with the modified user list
+	update := bson.M{
+		"$set": bson.M{
+			"reactions." + reactionKey: updatedUserList,
+			"updated_at":               time.Now(),
+		},
+	}
+
+	// Update the document in the database
 	result, err := messageService.Collection.UpdateOne(messageService.ctx, filter, update)
 	if err != nil {
 		return nil, err
 	}
+
 	return result, nil
 }
 
@@ -116,8 +167,6 @@ func GetMessages(limit int64, channel string, bookmarkID string) ([]MessageModel
 		}
 		filter["_id"] = bson.M{"$lt": objectID} // Get messages with IDs less than the bookmark
 	}
-
-	log.Debug("filter -- ", filter)
 
 	opts := options.Find().SetLimit(limit + 1).SetSort(bson.M{"_id": -1}) // Sort by ID descending (newer first)
 
@@ -179,15 +228,6 @@ func ListenChannel(channelId string) {
 
 		// Process the change event (insert, update, delete, etc.)
 		fmt.Printf("Received change event: %v\n", event)
-		// Convert the map to JSON
-		// jsonData, err := json.Marshal(event)
-		// if err != nil {
-		// 	fmt.Println(err)
-		// 	return
-		// }
-
-		// // Print the JSON output
-		// fmt.Printf("JSON Event -  %s\n", string(jsonData))
 
 		operationType, ok := event["operationType"]
 		if ok && operationType == "insert" {
@@ -202,14 +242,6 @@ func ListenChannel(channelId string) {
 				}
 			}
 		}
-		// err := user.Conn.WriteJSON(map[string]interface{}{
-		// 	"MsgId":  message.ID,
-		// 	"Values": message.Values,
-		// })
-		// if err != nil {
-		// 	fmt.Printf("Error sending message to user %s: %v", user.UserId, err)
-		// 	return
-		// }
 	}
 
 	// Check for errors in the change stream
