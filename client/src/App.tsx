@@ -11,12 +11,14 @@ function App() {
 		nextBookmark: string | null;
 		chat: ChatMessage[];
 		updateType: string;
+		isChatLoading: boolean;
 	}>({
 		currentURL: "",
 		hasMoreMessages: false,
 		nextBookmark: "",
 		chat: [],
-		updateType: ""
+		updateType: "",
+		isChatLoading: true
 	});
 	const appReadyRef = useRef<boolean>(false);
 
@@ -82,7 +84,8 @@ function App() {
 				currentURL: url,
 				hasMoreMessages: false,
 				nextBookmark: "",
-				chat: []
+				chat: [],
+				isChatLoading: true
 			}));
 
 			// @ts-ignore
@@ -92,7 +95,7 @@ function App() {
 				port.disconnect();
 			});
 			await registerUser(url);
-			await getOldMessages(url);
+			await getOldMessages(url, true);
 		}
 
 		return true;
@@ -144,7 +147,7 @@ function App() {
 		}
 	};
 
-	const getOldMessages = async (url: string) => {
+	const getOldMessages = async (url: string, isBookmark: boolean = false) => {
 		// Get messages
 		let userId = await getItemFromChromeStorage("user_id");
 		const headers: { [key: string]: string } = {};
@@ -154,7 +157,7 @@ function App() {
 			axios
 				.get(
 					`https://blablah-live-production.up.railway.app/messages?SiteId=${url || state.currentURL}&Bookmark=${
-						state.chat.length > 0 ? state.nextBookmark : ""
+						isBookmark ? "" : state.nextBookmark
 					}`,
 					{
 						headers
@@ -189,7 +192,10 @@ function App() {
 							return msg;
 						});
 
-						chatArray = [...chatArray, ...state.chat];
+						if (!isBookmark) {
+							chatArray = [...chatArray, ...state.chat];
+						}
+
 						chatArray.sort(
 							(a: ChatMessage, b: ChatMessage) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
 						);
@@ -203,7 +209,8 @@ function App() {
 							hasMoreMessages: resp.data.hasMore,
 							nextBookmark: resp.data.nextBookmark,
 							chat: JSON.parse(JSON.stringify(chatArray)),
-							updateType: "insertUp"
+							updateType: "insertUp",
+							isChatLoading: false
 						}));
 					}
 				})
@@ -219,6 +226,7 @@ function App() {
 			updateType={state.updateType}
 			hasMoreMessages={state.hasMoreMessages}
 			handleLoadMessages={getOldMessages}
+			isChatLoading={state.isChatLoading}
 		/>
 	);
 }

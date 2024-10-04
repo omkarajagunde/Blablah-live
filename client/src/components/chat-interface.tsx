@@ -27,6 +27,7 @@ import {
 import axios from "axios";
 import { ChatMessage, getItemFromChromeStorage } from "@/lib/utils";
 import { Alert, AlertTitle, AlertDescription } from "./ui/alert";
+import { Skeleton } from "./ui/skeleton";
 
 const emojis = ["😀", "😂", "😍", "🤔", "👍", "👎", "❤️", "🎉", "🔥", "👀"];
 const emojiNames = [
@@ -54,7 +55,8 @@ export function ChatInterface({
 	setChat,
 	hasMoreMessages,
 	handleLoadMessages,
-	updateType
+	updateType,
+	isChatLoading
 }: {
 	currentURL: string | null;
 	chat: ChatMessage[];
@@ -62,6 +64,7 @@ export function ChatInterface({
 	hasMoreMessages: boolean;
 	handleLoadMessages: Function;
 	updateType: string;
+	isChatLoading: boolean;
 }) {
 	const [darkMode, setDarkMode] = useState(true);
 	const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
@@ -251,95 +254,106 @@ export function ChatInterface({
 						</div>
 					)}
 
-					{chat.map((msg: any) => (
-						<div
-							key={msg._id}
-							id={msg._id}
-							className="flex items-start space-x-2 group relative rounded-lg"
-							onMouseEnter={() => setHoveredMessage(msg._id)}
-							onMouseLeave={() => setHoveredMessage(null)}
-						>
-							<img
-								className="w-10 h-10 rounded-full bg-muted"
-								src={`https://api.dicebear.com/9.x/thumbs/svg?seed=${msg.from.Username}&radius=50&backgroundColor=0a5b83,1c799f,69d2e7,f1f4dc,f88c49,b6e3f4,c0aede&translateY=15&randomizeIds=true`}
-							></img>
-							<div className="flex-1">
-								<div className="rounded-lg">
-									<div className="flex items-center justify-between">
-										<span className="font-semibold">{msg.from.Username}</span>
-										<span className="text-xs text-muted-foreground">
-											{new Date(msg.updated_at).toLocaleTimeString()}
-										</span>
-									</div>
-									<p className="mt-1 text-sm break-all">{msg.message}</p>
-									{msg.sticker && <img src={msg.sticker} alt="Sticker" className="mt-2 max-w-[200px] rounded" />}
-								</div>
-								<div className="flex items-center flex-wrap">
-									{Object.entries(msg.reactions).map(([emoji, count]: [any, any]) => (
-										<Button
-											key={emoji}
-											variant="secondary"
-											size="sm"
-											className="text-xs mr-1 mt-1"
-											onClick={() => handleReaction(emoji)}
-										>
-											{emoji} {count}
-										</Button>
-									))}
+					{isChatLoading &&
+						new Array(10).fill(10).map(() => (
+							<div className="flex items-center space-x-4">
+								<Skeleton className="h-12 w-12 rounded-full" />
+								<div className="space-y-2">
+									<Skeleton className="h-4 w-[150px]" />
+									<Skeleton className="h-4 w-[90px]" />
 								</div>
 							</div>
-							{hoveredMessage === msg._id && (
-								<div className="absolute right-0 bottom-2 flex items-center space-x-1 bg-background/80 backdrop-blur-sm rounded p-1">
-									<Popover>
-										<PopoverTrigger asChild>
-											<Button variant="ghost" size="sm">
-												<SmilePlus className="h-4 w-4" />
+						))}
+					{!isChatLoading &&
+						chat.map((msg: any) => (
+							<div
+								key={msg._id}
+								id={msg._id}
+								className="flex items-start space-x-2 group relative rounded-lg"
+								onMouseEnter={() => setHoveredMessage(msg._id)}
+								onMouseLeave={() => setHoveredMessage(null)}
+							>
+								<img
+									className="w-10 h-10 rounded-full bg-muted"
+									src={`https://api.dicebear.com/9.x/thumbs/svg?seed=${msg.from.Username}&radius=50&backgroundColor=0a5b83,1c799f,69d2e7,f1f4dc,f88c49,b6e3f4,c0aede&translateY=15&randomizeIds=true`}
+								></img>
+								<div className="flex-1">
+									<div className="rounded-lg">
+										<div className="flex items-center justify-between">
+											<span className="font-semibold">{msg.from.Username}</span>
+											<span className="text-xs text-muted-foreground">
+												{new Date(msg.updated_at).toLocaleTimeString()}
+											</span>
+										</div>
+										<p className="mt-1 text-sm break-all">{msg.message}</p>
+										{msg.sticker && <img src={msg.sticker} alt="Sticker" className="mt-2 max-w-[200px] rounded" />}
+									</div>
+									<div className="flex items-center flex-wrap">
+										{Object.entries(msg.reactions).map(([emoji, count]: [any, any]) => (
+											<Button
+												key={emoji}
+												variant="secondary"
+												size="sm"
+												className="text-xs mr-1 mt-1"
+												onClick={() => handleReaction(emoji)}
+											>
+												{emoji} {count}
 											</Button>
-										</PopoverTrigger>
-										<PopoverContent className="w-full p-0">
-											<div className="grid grid-cols-5 gap-2 p-2">
-												{emojis.map((emoji) => (
-													<Button
-														key={emoji}
-														variant="ghost"
-														size="sm"
-														className="text-lg"
-														onClick={() => handleReaction(emoji)}
-													>
-														{emoji}
-													</Button>
-												))}
-											</div>
-										</PopoverContent>
-									</Popover>
-									<TooltipProvider>
-										<Tooltip>
-											<TooltipTrigger asChild>
-												<Button variant="ghost" size="sm" onClick={() => setReplyTo(msg)}>
-													<Reply className="h-4 w-4" />
-												</Button>
-											</TooltipTrigger>
-											<TooltipContent>
-												<p>Reply</p>
-											</TooltipContent>
-										</Tooltip>
-									</TooltipProvider>
-									<TooltipProvider>
-										<Tooltip>
-											<TooltipTrigger asChild>
-												<Button variant="ghost" size="sm">
-													<Flag className="h-4 w-4 text-red-500" />
-												</Button>
-											</TooltipTrigger>
-											<TooltipContent>
-												<p>Flag message</p>
-											</TooltipContent>
-										</Tooltip>
-									</TooltipProvider>
+										))}
+									</div>
 								</div>
-							)}
-						</div>
-					))}
+								{hoveredMessage === msg._id && (
+									<div className="absolute right-0 bottom-2 flex items-center space-x-1 bg-background/80 backdrop-blur-sm rounded p-1">
+										<Popover>
+											<PopoverTrigger asChild>
+												<Button variant="ghost" size="sm">
+													<SmilePlus className="h-4 w-4" />
+												</Button>
+											</PopoverTrigger>
+											<PopoverContent className="w-full p-0">
+												<div className="grid grid-cols-5 gap-2 p-2">
+													{emojis.map((emoji) => (
+														<Button
+															key={emoji}
+															variant="ghost"
+															size="sm"
+															className="text-lg"
+															onClick={() => handleReaction(emoji)}
+														>
+															{emoji}
+														</Button>
+													))}
+												</div>
+											</PopoverContent>
+										</Popover>
+										<TooltipProvider>
+											<Tooltip>
+												<TooltipTrigger asChild>
+													<Button variant="ghost" size="sm" onClick={() => setReplyTo(msg)}>
+														<Reply className="h-4 w-4" />
+													</Button>
+												</TooltipTrigger>
+												<TooltipContent>
+													<p>Reply</p>
+												</TooltipContent>
+											</Tooltip>
+										</TooltipProvider>
+										<TooltipProvider>
+											<Tooltip>
+												<TooltipTrigger asChild>
+													<Button variant="ghost" size="sm">
+														<Flag className="h-4 w-4 text-red-500" />
+													</Button>
+												</TooltipTrigger>
+												<TooltipContent>
+													<p>Flag message</p>
+												</TooltipContent>
+											</Tooltip>
+										</TooltipProvider>
+									</div>
+								)}
+							</div>
+						))}
 					{showScrollToBottom && chat.length > 10 && (
 						<div className="sticky bottom-0 z-10 flex justify-center py-2 bg-gradient-to-t from-background to-transparent">
 							<Button

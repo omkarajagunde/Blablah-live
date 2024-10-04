@@ -36,11 +36,13 @@ function deepParse(obj) {
 }
 
 function openWebSocket(user_id) {
-	if (!socket) {
-		socket = new WebSocket(
-			`ws://blablah-live-production.up.railway.app/receive/${user_id}?SiteId=${sanitizeSiteUrl(currentURL)}`
-		);
+	if (socket) {
+		socket.close(1000, "Normal closure");
 	}
+
+	socket = new WebSocket(
+		`ws://blablah-live-production.up.railway.app/receive/${user_id}?SiteId=${sanitizeSiteUrl(currentURL)}`
+	);
 
 	socket.onopen = function (event) {
 		console.log("WebSocket connection opened");
@@ -58,9 +60,11 @@ function openWebSocket(user_id) {
 	socket.onclose = function (event) {
 		console.log("WebSocket closed. Reconnecting...", event);
 		socket = null;
-		setTimeout(() => {
-			openWebSocket(user_id);
-		}, 5000); // Attempt to reconnect after 5 seconds
+		if (!event.wasClean) {
+			setTimeout(() => {
+				openWebSocket(user_id);
+			}, 5000); // Attempt to reconnect after 5 seconds
+		}
 	};
 }
 

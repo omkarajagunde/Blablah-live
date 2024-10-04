@@ -61,7 +61,7 @@ func main() {
 	maxCores := runtime.NumCPU()
 	fmt.Printf("maxCores value: %d\n", maxCores)
 
-	runtime.GOMAXPROCS(2)
+	runtime.GOMAXPROCS(4)
 	fmt.Printf("Updated GOMAXPROCS value: %d\n", runtime.GOMAXPROCS(0))
 
 	go models.ListenAllChanges()
