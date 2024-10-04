@@ -54,7 +54,6 @@ function App() {
 	const handleListener = async (message: { action: string; url: string; data: any | null }) => {
 		// App ready to receive events
 
-		console.log(appReadyRef.current);
 		// @ts-ignore
 		if (!appReadyRef.current) chrome.runtime.sendMessage({ action: "APP_READY_TO_RECEIVE_EVENT" });
 		appReadyRef.current = true;
