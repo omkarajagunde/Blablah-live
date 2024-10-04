@@ -67,8 +67,10 @@ func (c *ChatController) Ws(conn *websocket.Conn) {
 		if user != nil && user.ActiveSite != "" {
 			_, ok := channels[user.ActiveSite]
 			if !ok {
+				mutex.Lock()
 				// go models.ListenChannel(user.ActiveSite)
 				channels[user.ActiveSite] = true
+				mutex.Unlock()
 			}
 		}
 
@@ -297,8 +299,10 @@ func (c *ChatController) UpdateUser(ctx *fiber.Ctx) error {
 
 					_, channelExists := channels[user.ActiveSite]
 					if !channelExists {
+						mutex.Lock()
 						// go models.ListenChannel(user.ActiveSite)
 						channels[user.ActiveSite] = true
+						mutex.Unlock()
 					}
 
 				} else {
