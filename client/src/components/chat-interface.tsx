@@ -126,6 +126,7 @@ export function ChatInterface({
 		let userId = await getItemFromChromeStorage("user_id");
 		let myProfile = await getItemFromChromeStorage("profile");
 		try {
+			setMessage("");
 			const headers: { [key: string]: string } = {};
 			if (userId && message.length > 0) {
 				// @ts-ignore
@@ -156,7 +157,6 @@ export function ChatInterface({
 					to: messageObj.To,
 					reactions: messageObj.Reactions
 				});
-				setMessage("");
 				scrollToBottom("down");
 			}
 		} catch (error) {

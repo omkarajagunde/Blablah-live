@@ -154,7 +154,7 @@ function App() {
 			axios
 				.get(
 					`https://blablah-live-production.up.railway.app/messages?SiteId=${url || state.currentURL}&Bookmark=${
-						state.nextBookmark
+						state.chat.length > 0 ? state.nextBookmark : ""
 					}`,
 					{
 						headers

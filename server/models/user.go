@@ -58,9 +58,6 @@ func CreateUserService(collection *mongo.Collection, ctx context.Context) {
 
 func NewUser(ctx *fiber.Ctx) (*UserModel, bool) {
 
-	ch := make(chan map[string]string)
-	defer close(ch)
-
 	username := gofakeit.Gamertag()
 	ipUrl := strings.Replace(C.IP_INFO_URL, "REPLACE_IP_HERE", ctx.IP(), 1)
 
@@ -109,10 +106,10 @@ func NewUser(ctx *fiber.Ctx) (*UserModel, bool) {
 
 	_, insertError := userService.Collection.InsertOne(userService.ctx, user)
 	if insertError != nil {
-		log.Error("Error while creating new user in redis: ", err)
+		log.Error("Error while creating new user in mongo: ", err)
 		return nil, false
 	}
-	log.Info("New user added to redis by id: ", userId)
+	log.Info("New user added to mongo by id: ", userId)
 	return user, true
 
 }
