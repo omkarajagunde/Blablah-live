@@ -100,6 +100,9 @@ chrome.runtime.onConnect.addListener((port) => {
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+	if (message.action === "GET_URL") {
+		updateTabUrl();
+	}
 	if (message.action === "APP_READY_TO_RECEIVE_EVENT") {
 		console.log("App ready");
 		updateTabUrl();

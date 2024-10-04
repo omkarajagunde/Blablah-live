@@ -24,6 +24,13 @@ function App() {
 		console.log("chat: ", state.chat);
 	}, [state.chat]);
 
+	useEffect(() => {
+		//request the current URL from the background script
+		console.log(" requested URL from background script");
+		// @ts-ignore
+		chrome.runtime.sendMessage({ action: "GET_URL" });
+	}, []);
+
 	const handleUpdateMsg = (payload: ChatMessage) => {
 		let newArray = state.chat.map((msg) => {
 			if (msg._id === payload._id) {
@@ -46,6 +53,7 @@ function App() {
 
 	const handleListener = async (message: { action: string; url: string; data: any | null }) => {
 		// App ready to receive events
+
 		// @ts-ignore
 		if (!appReadyRef.current) chrome.runtime.sendMessage({ action: "APP_READY_TO_RECEIVE_EVENT" });
 		appReadyRef.current = true;
