@@ -100,9 +100,11 @@ export function ChatInterface({
 	}, []);
 
 	useEffect(() => {
+		console.log("updateType - ", updateType);
+
 		if (updateType === "insertUp") scrollToBottom("up");
 		if (updateType === "insertDown") scrollToBottom("down");
-	}, [chat]);
+	}, [updateType]);
 
 	const handleMessageChange = (e: any) => {
 		setMessage(e.target.value);
@@ -160,7 +162,6 @@ export function ChatInterface({
 					to: messageObj.To,
 					reactions: messageObj.Reactions
 				});
-				scrollToBottom("down");
 			}
 		} catch (error) {
 			console.log(error);
@@ -264,6 +265,12 @@ export function ChatInterface({
 								</div>
 							</div>
 						))}
+
+					{!isChatLoading && chat.length === 0 && (
+						<div className="flex-1 justify-center">
+							No messages to show, you would be the first one to put a message here
+						</div>
+					)}
 					{!isChatLoading &&
 						chat.map((msg: any) => (
 							<div

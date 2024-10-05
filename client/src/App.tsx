@@ -212,6 +212,15 @@ function App() {
 							updateType: "insertUp",
 							isChatLoading: false
 						}));
+					} else {
+						setState((prevState) => ({
+							...prevState,
+							hasMoreMessages: false,
+							nextBookmark: "",
+							chat: [],
+							updateType: "insertUp",
+							isChatLoading: false
+						}));
 					}
 				})
 				.catch(console.error);
