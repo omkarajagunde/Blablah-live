@@ -10,11 +10,11 @@ import (
 	"server/models"
 	"time"
 
+	"net/http"
 	_ "net/http/pprof"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/gofiber/fiber/v2/middleware/pprof"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
 	"github.com/joho/godotenv"
 )
@@ -30,9 +30,6 @@ func main() {
 		AllowHeaders: "Origin, Content-Type, Accept, Authorization, X-Id",
 		AllowMethods: "GET, POST, PUT, DELETE, PATCH, HEAD",
 	}))
-
-	app.Use(pprof.New())
-	app.Use(pprof.New(pprof.Config{Prefix: "/debug/cpu/perf"}))
 
 	// Connect redis DB
 	// db.RedisInit()
@@ -74,5 +71,10 @@ func main() {
 
 	PORT := os.Getenv("PORT")
 	log.Fatal(app.Listen(":" + PORT))
+
+	// Launch pprof in a different goroutine
+	go func() {
+		log.Println(http.ListenAndServe(":6060", nil)) // This will expose pprof on port 6060
+	}()
 
 }
