@@ -20,6 +20,11 @@ import (
 )
 
 func main() {
+	// Launch pprof in a different goroutine
+	go func() {
+		log.Println(http.ListenAndServe(":6060", nil)) // This will expose pprof on port 6060
+	}()
+
 	godotenv.Load(".env")
 
 	app := fiber.New()
@@ -70,10 +75,5 @@ func main() {
 
 	PORT := os.Getenv("PORT")
 	log.Fatal(app.Listen(":" + PORT))
-
-	// Launch pprof in a different goroutine
-	go func() {
-		log.Println(http.ListenAndServe(":6060", nil)) // This will expose pprof on port 6060
-	}()
 
 }
