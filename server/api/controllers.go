@@ -61,6 +61,7 @@ func (c *ChatController) Ws(conn *websocket.Conn) {
 			conn.Close()
 			mutex.Lock()
 			db.Connections[userId].IsActive = false
+			db.Connections[userId].Channel = make(chan map[string]interface{})
 			mutex.Unlock()
 		}()
 
@@ -74,7 +75,8 @@ func (c *ChatController) Ws(conn *websocket.Conn) {
 			}
 		}
 
-		for {
+		for msg := range db.Connections[userId].Channel {
+			conn.WriteJSON(msg)
 		}
 	}
 }
