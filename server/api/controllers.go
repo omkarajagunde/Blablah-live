@@ -78,7 +78,6 @@ func (c *ChatController) Ws(conn *websocket.Conn) {
 		for {
 			// Wait for a message on the Channel
 			message, ok := <-db.Connections[userId].Channel
-			fmt.Printf("message received to channel - %s, userId - %s\n", message, userId)
 			if !ok {
 				// If the channel is closed, stop the goroutine
 				return
@@ -325,6 +324,7 @@ func (c *ChatController) UpdateUser(ctx *fiber.Ctx) error {
 					db.Connections[userId].ActiveSite = siteId
 					db.Connections[userId].IsActive = false
 					db.Connections[userId].Conn.Close()
+					close(db.Connections[userId].Channel)
 					fmt.Printf("User went offline: %s\n", userId)
 					mutex.Unlock()
 				}

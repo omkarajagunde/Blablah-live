@@ -258,12 +258,11 @@ func ListenAllChanges() {
 					}
 				}
 			case "update":
-				fmt.Println("An update operation occurred.", event)
+				// fmt.Println("An update operation occurred.", event)
 				for _, userConn := range db.Connections {
 					if doc, docExists := event["fullDocument"].(bson.M); docExists {
 						if channel, channelExists := doc["channel"].(string); channelExists {
 							if userConn.IsActive && userConn.ActiveSite == channel {
-								fmt.Printf("Sending message to channel for user - %s\n", userConn.UserId)
 								userConn.Channel <- map[string]interface{}{
 									"doc":  doc,
 									"type": "update",
