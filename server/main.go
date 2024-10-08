@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"runtime"
+	"runtime/pprof"
 	"server/api"
 	"server/db"
 	"server/models"
@@ -20,6 +21,18 @@ import (
 )
 
 func main() {
+
+	// Set up CPU profiling
+	f, err := os.Create("cpu.prof")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close() // Make sure to close the file when main() exits
+
+	if err := pprof.StartCPUProfile(f); err != nil {
+		log.Fatal("could not start CPU profile: ", err)
+	}
+	defer pprof.StopCPUProfile()
 
 	godotenv.Load(".env")
 
