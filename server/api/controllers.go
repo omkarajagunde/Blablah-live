@@ -75,8 +75,19 @@ func (c *ChatController) Ws(conn *websocket.Conn) {
 			}
 		}
 
-		for msg := range db.Connections[userId].Channel {
-			conn.WriteJSON(msg)
+		for {
+			// Wait for a message on the Channel
+			message, ok := <-db.Connections[userId].Channel
+			if !ok {
+				// If the channel is closed, stop the goroutine
+				return
+			}
+
+			// Send the message to the WebSocket connection
+			if err := conn.WriteJSON(message); err != nil {
+				fmt.Printf("Error sending message to user %s: %v", userId, err)
+				return
+			}
 		}
 	}
 }
