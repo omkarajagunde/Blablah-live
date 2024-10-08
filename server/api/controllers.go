@@ -78,6 +78,7 @@ func (c *ChatController) Ws(conn *websocket.Conn) {
 		for {
 			// Wait for a message on the Channel
 			message, ok := <-db.Connections[userId].Channel
+			fmt.Printf("message received to channel - %s, userId - %s\n", message, userId)
 			if !ok {
 				// If the channel is closed, stop the goroutine
 				return
