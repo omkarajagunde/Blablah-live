@@ -26,6 +26,7 @@ type UserSocket struct {
 	Conn       *websocket.Conn
 	IsActive   bool
 	ActiveSite string
+	Channel    chan map[string]interface{}
 }
 
 var (
@@ -113,49 +114,4 @@ func StreamExists(siteId string) bool {
 	}
 	fmt.Printf("Stream %s exists\n", siteId)
 	return true
-}
-
-func StartStreamConsumer(streamName string, user *UserSocket) {
-
-	// defer func() {
-	// 	close(user.LastStreamQuit)
-	// }()
-
-	for {
-
-		result, err := client.XRead(ctx, &redis.XReadArgs{
-			Streams: []string{streamName, "$"},
-			Count:   1,
-			Block:   0,
-		}).Result()
-
-		if err != nil {
-			fmt.Printf("Error reading from stream %s: %v", streamName, err)
-			return
-		}
-
-		log.Info("Stream reading - ", streamName, " for user - ", user.UserId)
-
-		for _, stream := range result {
-			for _, message := range stream.Messages {
-				log.Info("message -- ", message.ID)
-				// Send message to the user via WebSocket
-				err := user.Conn.WriteJSON(map[string]interface{}{
-					"MsgId":  message.ID,
-					"Values": message.Values,
-				})
-				if err != nil {
-					fmt.Printf("Error sending message to user %s: %v", user.UserId, err)
-					return
-				}
-
-				// Acknowledge the message
-				// _, err = client.XAck(ctx, streamName, "mygroup", message.ID).Result()
-				// if err != nil {
-				// 	fmt.Printf("Error acknowledging message: %v", err)
-				// }
-			}
-		}
-
-	}
 }

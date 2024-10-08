@@ -249,10 +249,10 @@ func ListenAllChanges() {
 					if doc, docExists := event["fullDocument"].(bson.M); docExists {
 						if channel, channelExists := doc["channel"].(string); channelExists {
 							if userConn.IsActive && userConn.ActiveSite == channel {
-								userConn.Conn.WriteJSON(map[string]interface{}{
+								userConn.Channel <- map[string]interface{}{
 									"doc":  doc,
 									"type": "insert",
-								})
+								}
 							}
 						}
 					}
@@ -263,10 +263,10 @@ func ListenAllChanges() {
 					if doc, docExists := event["fullDocument"].(bson.M); docExists {
 						if channel, channelExists := doc["channel"].(string); channelExists {
 							if userConn.IsActive && userConn.ActiveSite == channel {
-								userConn.Conn.WriteJSON(map[string]interface{}{
+								userConn.Channel <- map[string]interface{}{
 									"doc":  doc,
 									"type": "update",
-								})
+								}
 							}
 						}
 					}
@@ -323,8 +323,7 @@ func ListenChannel(channelId string) {
 					if doc, docExists := event["fullDocument"].(bson.M); docExists {
 						if channel, channelExists := doc["channel"].(string); channelExists {
 							if userConn.IsActive && userConn.ActiveSite == channel {
-								log.Debug("userConn - ", userConn)
-								userConn.Conn.WriteJSON(doc)
+								userConn.Channel <- doc
 							}
 						}
 					}
