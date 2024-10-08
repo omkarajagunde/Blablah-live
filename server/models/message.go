@@ -258,7 +258,7 @@ func ListenAllChanges() {
 					}
 				}
 			case "update":
-				// fmt.Println("An update operation occurred.", event)
+				fmt.Println("An update operation occurred.", event)
 				for _, userConn := range db.Connections {
 					if doc, docExists := event["fullDocument"].(bson.M); docExists {
 						if channel, channelExists := doc["channel"].(string); channelExists {
