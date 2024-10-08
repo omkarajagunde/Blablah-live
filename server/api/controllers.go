@@ -52,6 +52,7 @@ func (c *ChatController) Ws(conn *websocket.Conn) {
 			Conn:       conn,
 			IsActive:   true,
 			ActiveSite: siteId,
+			Channel:    make(chan map[string]interface{}),
 		}
 		fmt.Printf("User connected - %s\n", userId)
 		mutex.Unlock()
@@ -61,7 +62,6 @@ func (c *ChatController) Ws(conn *websocket.Conn) {
 			conn.Close()
 			mutex.Lock()
 			db.Connections[userId].IsActive = false
-			db.Connections[userId].Channel = make(chan map[string]interface{})
 			mutex.Unlock()
 		}()
 
