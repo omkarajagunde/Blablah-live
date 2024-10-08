@@ -11,18 +11,53 @@ import (
 	"time"
 
 	"net/http"
+	"net/http/pprof"
 	_ "net/http/pprof"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
+	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 )
 
 func main() {
 	// Launch pprof in a different goroutine
 	go func() {
-		log.Println(http.ListenAndServe(":6060", nil)) // This will expose pprof on port 6060
+		router := mux.NewRouter()
+
+		router.HandleFunc(
+			"/debug/pprof/", pprof.Index,
+		)
+		router.HandleFunc(
+			"/debug/pprof/cmdline", pprof.Cmdline,
+		)
+		router.HandleFunc(
+			"/debug/pprof/profile", pprof.Profile,
+		)
+		router.HandleFunc(
+			"/debug/pprof/symbol", pprof.Symbol,
+		)
+		router.HandleFunc(
+			"/debug/pprof/trace", pprof.Trace,
+		)
+		router.Handle(
+			"/debug/pprof/goroutine", pprof.Handler("goroutine"),
+		)
+		router.Handle(
+			"/debug/pprof/heap", pprof.Handler("heap"),
+		)
+		router.Handle(
+			"/debug/pprof/threadcreate", pprof.Handler("threadcreate"),
+		)
+		router.Handle(
+			"/debug/pprof/block", pprof.Handler("block"),
+		)
+		router.Handle(
+			"/debug/vars", http.DefaultServeMux,
+		)
+
+		http.ListenAndServe(":6060", router)
 	}()
 
 	godotenv.Load(".env")

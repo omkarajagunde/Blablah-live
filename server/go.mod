@@ -29,6 +29,7 @@ require (
 	github.com/gofiber/contrib/websocket v1.3.2
 	github.com/gofiber/websocket/v2 v2.2.1
 	github.com/google/uuid v1.6.0 // indirect
+	github.com/gorilla/mux v1.8.1
 	github.com/joho/godotenv v1.5.1
 	github.com/klauspost/compress v1.17.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
