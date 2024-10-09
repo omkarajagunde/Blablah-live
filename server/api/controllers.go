@@ -84,7 +84,7 @@ func (c *ChatController) Ws(conn *websocket.Conn) {
 			}
 
 			// Send the message to the WebSocket connection
-			if err := conn.WriteJSON(message); err != nil {
+			if err := db.Connections[userId].Conn.WriteJSON(message); err != nil {
 				fmt.Printf("Error sending message to user %s: %v", userId, err)
 				return
 			}
