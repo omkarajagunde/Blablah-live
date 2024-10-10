@@ -407,6 +407,7 @@ export function ChatInterface({
 
 					<div className="flex items-end space-x-2">
 						<Textarea
+							maxLength={255}
 							ref={textareaRef}
 							placeholder="Type a message..."
 							className="flex-1 min-h-[40px] max-h-[120px] resize-none"

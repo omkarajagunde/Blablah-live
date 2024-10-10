@@ -127,6 +127,13 @@ func (c *ChatController) SendMessage(ctx *fiber.Ctx) error {
 		})
 	}
 
+	if len(message.Message) > 255 {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  fiber.StatusBadRequest,
+			"message": "Max message length allowed is 255",
+		})
+	}
+
 	msgId := models.WriteMessageToChannel(message)
 
 	return ctx.Status(200).JSON(fiber.Map{
