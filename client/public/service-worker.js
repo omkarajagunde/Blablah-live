@@ -46,6 +46,11 @@ function openWebSocket(user_id) {
 
 	socket.onopen = function (event) {
 		console.log("WebSocket connection opened");
+		setInterval(() => {
+			if (socket.readyState === WebSocket.OPEN) {
+				socket.send("ping");
+			}
+		}, 5000);
 	};
 
 	socket.onmessage = function (event) {

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ChatInterface } from "./components/chat-interface";
 import axios from "axios";
+import newMessageSound from "./new-message.mp3";
 import { getItemFromChromeStorage, sanitizeSiteUrl, setItemInChromeStorage, ChatMessage } from "./lib/utils";
 /// <reference types="chrome"/>
 
@@ -21,10 +22,6 @@ function App() {
 		isChatLoading: true
 	});
 	const appReadyRef = useRef<boolean>(false);
-
-	useEffect(() => {
-		console.log("chat: ", state.chat);
-	}, [state.chat]);
 
 	useEffect(() => {
 		//request the current URL from the background script
@@ -61,13 +58,13 @@ function App() {
 		appReadyRef.current = true;
 
 		if (message.action === "WS_MESSAGE") {
-			console.log("App:WS_MESSAGE:received :: ", message.data);
-
 			let userId = await getItemFromChromeStorage("user_id");
 			let type = message.data.type;
 			let payload: ChatMessage = message.data.doc;
 			if (type === "insert") {
 				if (userId !== payload.from.Id) {
+					var audio = new Audio(newMessageSound);
+					audio.play();
 					setState((prevState) => ({ ...prevState, chat: [...prevState.chat, payload], updateType: "insertDown" }));
 				}
 			}

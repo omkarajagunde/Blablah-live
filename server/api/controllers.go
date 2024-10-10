@@ -26,6 +26,8 @@ type ChatController struct{}
 
 // Ws handles WebSocket Connections
 func (c *ChatController) Ws(conn *websocket.Conn) {
+
+	defer conn.Close()
 	// Extract userId from query parameters
 	userId := conn.Params("id")
 	siteId := conn.Query("SiteId")
@@ -75,18 +77,33 @@ func (c *ChatController) Ws(conn *websocket.Conn) {
 		// 	}
 		// }
 
+		// Goroutine to listen for messages from the channel and send to the WebSocket client
+		go func() {
+			for {
+				message, ok := <-db.Connections[userId].Channel
+				// Wait for a message on the Channel
+				if !ok {
+					// If the channel is closed, stop the goroutine
+					return
+				}
+
+				// Send the message to the WebSocket connection
+				if err := db.Connections[userId].Conn.WriteJSON(message); err != nil {
+					fmt.Printf("Error sending message to user %s: %v", userId, err)
+					return
+				}
+			}
+		}()
+
 		for {
-			// Wait for a message on the Channel
-			message, ok := <-db.Connections[userId].Channel
-			if !ok {
-				// If the channel is closed, stop the goroutine
-				return
+			// Handle incoming ping/pong or other messages
+			_, msg, err := conn.ReadMessage()
+			if err != nil {
+				break
 			}
 
-			// Send the message to the WebSocket connection
-			if err := db.Connections[userId].Conn.WriteJSON(message); err != nil {
-				fmt.Printf("Error sending message to user %s: %v", userId, err)
-				return
+			if string(msg) == "ping" {
+				conn.WriteMessage(websocket.TextMessage, []byte("pong"))
 			}
 		}
 	}

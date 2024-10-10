@@ -101,21 +101,19 @@ export function ChatInterface({
 	}, []);
 
 	useEffect(() => {
-		console.log("updateType - ", updateType);
-
 		if (updateType === "insertUp") scrollToBottom("up");
 		if (updateType === "insertDown") scrollToBottom("down");
 	}, [updateType]);
 
 	useEffect(() => {
 		let interval = setInterval(() => {
-			axios.get("/metadata").then((resp: any) => {
+			axios.get(`https://blablah-live-production.up.railway.app/metadata?SiteId=${currentURL}`).then((resp: any) => {
 				setUsersCount(resp.data.live);
 			});
 		}, 5000);
 
 		return () => clearInterval(interval);
-	}, []);
+	}, [currentURL]);
 
 	const handleMessageChange = (e: any) => {
 		setMessage(e.target.value);
@@ -200,16 +198,13 @@ export function ChatInterface({
 			if (userId && hoveredMessage) {
 				// @ts-ignore
 				headers["X-Id"] = userId;
-				let response = await axios.post(
+				await axios.post(
 					`https://blablah-live-production.up.railway.app/react/${hoveredMessage}`,
 					{ emoji },
 					{ headers }
 				);
-				console.log("AddReactions response -- ", response);
 			}
-		} catch (error) {
-			console.log("AddReactions error -- ", error);
-		}
+		} catch (error) {}
 	};
 
 	return (
@@ -246,13 +241,7 @@ export function ChatInterface({
 						</Button>
 					</CollapsibleTrigger>
 					<CollapsibleContent className="p-2 bg-secondary/50">
-						{pinnedExpanded ? (
-							<>
-								<p className="text-sm">Are you liking the plugin? Provide feedback - </p>
-							</>
-						) : (
-							<p className="text-sm truncate">Important: Team meeting at 3 PM today!</p>
-						)}
+						{pinnedExpanded && <p>Are you liking the plugin? Provide feedback - </p>}
 					</CollapsibleContent>
 				</Collapsible>
 
