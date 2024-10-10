@@ -8,6 +8,8 @@ var socketInterval = null;
 function sanitizeSiteUrl(url) {
 	const site = new URL(url);
 	if (url.includes("youtube")) {
+		const videoId = site.searchParams.get("v");
+		return `${site.protocol}//${site.host}${site.pathname}?v=${videoId}`;
 	}
 	if (url.includes("amazon")) {
 	}
