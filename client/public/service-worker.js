@@ -7,15 +7,22 @@ var socketInterval = null;
 
 function sanitizeSiteUrl(url) {
 	const site = new URL(url);
+
 	if (url.includes("youtube")) {
 		const videoId = site.searchParams.get("v");
 		if (videoId) return `${site.protocol}//${site.host}${site.pathname}?v=${videoId}`;
 	}
 
-	if (url.includes("drive.google.com")) return `${site.protocol}//${site.host}`;
+	if (url.includes("drive.google")) return `${site.protocol}//${site.host}`;
+
+	if (url.includes("google")) {
+		const query = site.searchParams.get("q");
+		if (query) return `${site.protocol}//${site.host}${site.pathname}?q=${query}`;
+	}
 
 	if (url.includes("amazon")) {
 	}
+
 	return `${site.protocol}//${site.host}${site.pathname}`;
 }
 
