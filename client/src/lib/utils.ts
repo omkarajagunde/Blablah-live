@@ -6,10 +6,17 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function sanitizeSiteUrl(url: string) {
-    const site = new URL(url)
-    if (url.includes("youtube")) { }
-    if (url.includes("amazon")) { }
-    return `${site.protocol}//${site.host}${site.pathname}`   
+    const site = new URL(url);
+	if (url.includes("youtube")) {
+		const videoId = site.searchParams.get("v");
+		return `${site.protocol}//${site.host}${site.pathname}?v=${videoId}`;
+	}
+
+	if (url.includes("drive.google.com")) return `${site.protocol}//${site.host}`;
+
+	if (url.includes("amazon")) {
+	}
+	return `${site.protocol}//${site.host}${site.pathname}`;  
 }
 
  // Set item in Chrome storage
