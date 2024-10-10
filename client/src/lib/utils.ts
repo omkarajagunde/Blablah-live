@@ -8,8 +8,8 @@ export function cn(...inputs: ClassValue[]) {
 export function sanitizeSiteUrl(url: string) {
     const site = new URL(url);
 	if (url.includes("youtube")) {
-		const videoId = site.searchParams.get("v");
-		return `${site.protocol}//${site.host}${site.pathname}?v=${videoId}`;
+        const videoId = site.searchParams.get("v");
+        if (videoId) return `${site.protocol}//${site.host}${site.pathname}?v=${videoId}`;
 	}
 
 	if (url.includes("drive.google.com")) return `${site.protocol}//${site.host}`;

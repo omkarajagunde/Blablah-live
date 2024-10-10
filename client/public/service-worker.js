@@ -9,7 +9,7 @@ function sanitizeSiteUrl(url) {
 	const site = new URL(url);
 	if (url.includes("youtube")) {
 		const videoId = site.searchParams.get("v");
-		return `${site.protocol}//${site.host}${site.pathname}?v=${videoId}`;
+		if (videoId) return `${site.protocol}//${site.host}${site.pathname}?v=${videoId}`;
 	}
 
 	if (url.includes("drive.google.com")) return `${site.protocol}//${site.host}`;
