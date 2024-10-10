@@ -30,7 +30,7 @@ func (c *ChatController) Ws(conn *websocket.Conn) {
 	userId := conn.Params("id")
 	siteId := conn.Query("SiteId")
 	if userId != "" {
-		user, isErr := models.GetUser(userId)
+		_, isErr := models.GetUser(userId)
 		if isErr {
 			conn.WriteControl(
 				websocket.CloseMessage,
@@ -65,15 +65,15 @@ func (c *ChatController) Ws(conn *websocket.Conn) {
 			mutex.Unlock()
 		}()
 
-		if user != nil && user.ActiveSite != "" {
-			_, ok := channels[user.ActiveSite]
-			if !ok {
-				mutex.Lock()
-				// go models.ListenChannel(user.ActiveSite)
-				channels[user.ActiveSite] = true
-				mutex.Unlock()
-			}
-		}
+		// if user != nil && user.ActiveSite != "" {
+		// 	_, ok := channels[user.ActiveSite]
+		// 	if !ok {
+		// 		mutex.Lock()
+		// 		// go models.ListenChannel(user.ActiveSite)
+		// 		channels[user.ActiveSite] = true
+		// 		mutex.Unlock()
+		// 	}
+		// }
 
 		for {
 			// Wait for a message on the Channel
@@ -142,6 +142,24 @@ func (c *ChatController) SendMessage(ctx *fiber.Ctx) error {
 		"MsgId":   msgId,
 	})
 
+}
+
+func (c *ChatController) GetChannelMetadata(ctx *fiber.Ctx) error {
+
+	siteId := ctx.Query("SiteId")
+	userCount := 0
+	for _, userConn := range db.Connections {
+		if userConn.ActiveSite == siteId && userConn.IsActive {
+			userCount++
+		}
+	}
+
+	return ctx.Status(200).JSON(fiber.Map{
+		"message":      "Meta data sent successfully",
+		"status":       200,
+		"live":         userCount,
+		"platformLive": len(db.Connections),
+	})
 }
 
 // GetMessages retrieves a list of messages

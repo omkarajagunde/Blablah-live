@@ -14,6 +14,9 @@ func SetupRoutes(router fiber.Router) {
 	// WebSocket to receive messages
 	router.Get("/receive/:id", websocket.New(controller.Ws))
 
+	// Retrieve live user counts
+	router.Get("/metadata", RateLimit(C.Tier3, 0), controller.GetChannelMetadata)
+
 	// Send message to a site:channel
 	router.Post("/send", RateLimit(C.Tier3, 0), controller.SendMessage)
 

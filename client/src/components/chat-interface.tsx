@@ -68,6 +68,7 @@ export function ChatInterface({
 }) {
 	const [darkMode, setDarkMode] = useState(true);
 	const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
+	const [usersCount, setUsersCount] = useState(0);
 	const [message, setMessage] = useState("");
 	const [showEmojiSuggestions, setShowEmojiSuggestions] = useState(false);
 	const [pinnedExpanded, setPinnedExpanded] = useState(true);
@@ -105,6 +106,16 @@ export function ChatInterface({
 		if (updateType === "insertUp") scrollToBottom("up");
 		if (updateType === "insertDown") scrollToBottom("down");
 	}, [updateType]);
+
+	useEffect(() => {
+		let interval = setInterval(() => {
+			axios.get("/metadata").then((resp: any) => {
+				setUsersCount(resp.data.live);
+			});
+		}, 5000);
+
+		return () => clearInterval(interval);
+	}, []);
 
 	const handleMessageChange = (e: any) => {
 		setMessage(e.target.value);
@@ -213,7 +224,7 @@ export function ChatInterface({
 									<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
 									<span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
 								</span>
-								<span className="text-sm font-medium">5 users</span>
+								<span className="text-sm font-medium whitespace-nowrap">{usersCount} users</span>
 							</div>
 
 							<Button variant="ghost" size="icon">
