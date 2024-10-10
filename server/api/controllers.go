@@ -27,7 +27,6 @@ type ChatController struct{}
 // Ws handles WebSocket Connections
 func (c *ChatController) Ws(conn *websocket.Conn) {
 
-	defer conn.Close()
 	// Extract userId from query parameters
 	userId := conn.Params("id")
 	siteId := conn.Query("SiteId")
@@ -45,6 +44,9 @@ func (c *ChatController) Ws(conn *websocket.Conn) {
 		// Setting a close handler
 		conn.SetCloseHandler(func(code int, text string) error {
 			fmt.Printf("Connection closed with code: %d, reason: %s, user: %s", code, text, userId)
+			mutex.Lock()
+			db.Connections[userId].IsActive = false
+			mutex.Unlock()
 			return nil
 		})
 

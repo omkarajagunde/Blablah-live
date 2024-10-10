@@ -3,6 +3,7 @@ var panelClosedCalled = false;
 var socket = null;
 var activeTabId = null;
 var currentURL = "";
+var socketInterval = null;
 
 function sanitizeSiteUrl(url) {
 	const site = new URL(url);
@@ -46,11 +47,11 @@ function openWebSocket(user_id) {
 
 	socket.onopen = function (event) {
 		console.log("WebSocket connection opened");
-		setInterval(() => {
-			if (socket.readyState === WebSocket.OPEN) {
+		clearInterval(socketInterval);
+		if (socket && socket.readyState && socket.readyState === WebSocket.OPEN)
+			socketInterval = setInterval(() => {
 				socket.send("ping");
-			}
-		}, 5000);
+			}, 5000);
 	};
 
 	socket.onmessage = function (event) {
