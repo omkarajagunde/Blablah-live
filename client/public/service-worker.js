@@ -11,6 +11,9 @@ function sanitizeSiteUrl(url) {
 		const videoId = site.searchParams.get("v");
 		return `${site.protocol}//${site.host}${site.pathname}?v=${videoId}`;
 	}
+
+	if (url.includes("drive.google.com")) return `${site.protocol}//${site.host}`;
+
 	if (url.includes("amazon")) {
 	}
 	return `${site.protocol}//${site.host}${site.pathname}`;
