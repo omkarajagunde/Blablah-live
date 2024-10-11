@@ -8,7 +8,18 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Send, SmilePlus, Flag, Reply, X, ArrowUp, ArrowDown, AlertCircle } from "lucide-react";
+import {
+	Send,
+	SmilePlus,
+	Flag,
+	Reply,
+	X,
+	ArrowUp,
+	ArrowDown,
+	AlertCircle,
+	SettingsIcon,
+	FileTextIcon
+} from "lucide-react";
 import axios from "axios";
 import { ChatMessage, getItemFromChromeStorage } from "@/lib/utils";
 import { Alert, AlertTitle, AlertDescription } from "./ui/alert";
@@ -206,10 +217,9 @@ export function ChatInterface({
 					<div className="flex items-center justify-between p-2 space-y-2">
 						<span className="text-sm font-medium truncate">{currentURL}</span>
 					</div>
-					<Separator className="m-1" />
-					<Tabs defaultValue="emoji" className="w-full">
-						<TabsList defaultValue={"chat"} className="grid w-full grid-cols-2">
-							<TabsTrigger value="chat" onClick={() => handleChangeTab(1)}>
+					<Tabs defaultValue="chat" className="w-full">
+						<TabsList defaultValue="chat" className="flex w-full items-center">
+							<TabsTrigger value="chat" onClick={() => handleChangeTab(1)} className="flex-grow justify-start">
 								<div className="flex items-center">
 									<span className="relative flex h-3 w-3 mr-2">
 										<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
@@ -218,8 +228,11 @@ export function ChatInterface({
 									<span className="text-sm font-medium whitespace-nowrap">Live chat ({usersCount} users)</span>
 								</div>
 							</TabsTrigger>
-							<TabsTrigger value="settings" onClick={() => handleChangeTab(2)}>
-								Settings
+							<TabsTrigger value="settings" onClick={() => handleChangeTab(2)} className="w-10 flex justify-center">
+								<SettingsIcon className="h-4 w-4" />
+							</TabsTrigger>
+							<TabsTrigger value="about" onClick={() => handleChangeTab(3)} className="w-10 flex justify-center">
+								<FileTextIcon className="h-4 w-4" />
 							</TabsTrigger>
 						</TabsList>
 					</Tabs>
@@ -479,6 +492,59 @@ export function ChatInterface({
 					<div className="flex items-center space-x-2 p-2">
 						<Switch id="mode" onClick={toggleDarkMode} />
 						<Label htmlFor="mode">{darkMode ? "Dark" : "Light"} mode</Label>
+					</div>
+				)}
+
+				{tab === 3 && (
+					<div className="flex h-screen overflow-y-auto items-center space-x-2 p-2">
+						<div className="p-4 text-sm overflow-y-auto h-full max-h-full">
+							<h2 className="font-semibold mb-2">Guidelines for Usage</h2>
+							<p className="italic text-gray-500 mb-4">(Scroll till end)</p>
+
+							<p className="text-gray-700 mb-4">Last updated: Oct 11, 2024</p>
+
+							<h3 className="font-semibold mb-2">Creator's Note</h3>
+							<p className="text-gray-700 mb-4">
+								This plugin is purely created as an individual side project, so please do not expect any guarantees or
+								warranties of this software. We have tried our best to provide important features like age detection and
+								negative keywords for privacy protection, avoiding SPAM.
+							</p>
+
+							<h3 className="font-semibold mb-2">Freedom of Speech</h3>
+							<p className="text-gray-700 mb-4">
+								I/We, as the creator of this plugin, believe in democracy and freedom of speech. You, as the user of
+								this plugin, are allowed to practice your freedom of speech. However, we request you to abide by the
+								laws of your country. The following activities are banned on this platform:
+							</p>
+							<ul className="list-disc list-inside mb-4 text-gray-700">
+								<li>Hate speech</li>
+								<li>Any kind of terrorist activities</li>
+								<li>Selling of illegal physical or digital goods</li>
+								<li>Child and adult pornography</li>
+								<li>Sexual harassment</li>
+								<li>Sexual media</li>
+							</ul>
+
+							<h3 className="font-semibold mb-2">Direction of Use</h3>
+							<p className="text-gray-700 mb-4">
+								We hope you like our plugin and appreciate the effort we've put into it. We would love if you use this
+								app to meet new people, share ideas and experiences, make new friends, and feel good without judging
+								each other.
+							</p>
+
+							<p className="text-gray-700 mt-4">
+								Write us:{" "}
+								<a href="mailto:manage.blablah@gmail.com" className="text-blue-500 underline">
+									manage.blablah@gmail.com
+								</a>
+							</p>
+							<p className="text-gray-700">
+								Created by:{" "}
+								<a href="https://x.com/ajagundeomkar" className="text-blue-500 underline">
+									@ajagundeomkar
+								</a>
+							</p>
+						</div>
 					</div>
 				)}
 			</div>
