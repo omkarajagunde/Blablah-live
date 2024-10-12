@@ -55,7 +55,8 @@ export function ChatInterface({
 	hasMoreMessages,
 	handleLoadMessages,
 	updateType,
-	isChatLoading
+	isChatLoading,
+	handleNewTab
 }: {
 	currentURL: string | null;
 	chat: ChatMessage[];
@@ -64,6 +65,7 @@ export function ChatInterface({
 	handleLoadMessages: Function;
 	updateType: string;
 	isChatLoading: boolean;
+	handleNewTab: Function;
 }) {
 	const [darkMode, setDarkMode] = useState(true);
 	const [tab, setTab] = useState<Number>(1);
@@ -240,7 +242,12 @@ export function ChatInterface({
 
 				{tab === 1 && (
 					<>
-						<div className="text-sm text-muted-foreground p-2">Are you liking the plugin? Provide feedback - </div>
+						<div className="text-sm text-muted-foreground p-2">
+							Are you liking the plugin? Provide feedback -
+							<a className="text-blue-500 underline" onClick={() => handleNewTab("https://tally.so/r/wb8DL1")} href="">
+								Feedback form
+							</a>
+						</div>
 						<Separator className="mt-1" />
 						<div className="flex-1 overflow-y-auto space-y-4 px-4 my-2 scroll-smooth" ref={chatRef}>
 							{hasMoreMessages && (
@@ -506,8 +513,7 @@ export function ChatInterface({
 							<h3 className="font-semibold mb-2">Creator's Note</h3>
 							<p className="text-gray-700 mb-4">
 								This plugin is purely created as an individual side project, so please do not expect any guarantees or
-								warranties of this software. We have tried our best to provide important features like age detection and
-								negative keywords for privacy protection, avoiding SPAM.
+								warranties of this software. All messages are deleted by default after 7 days
 							</p>
 
 							<h3 className="font-semibold mb-2">Freedom of Speech</h3>
@@ -534,14 +540,32 @@ export function ChatInterface({
 
 							<p className="text-gray-700 mt-4">
 								Write us:{" "}
-								<a href="mailto:manage.blablah@gmail.com" className="text-blue-500 underline">
+								<a
+									onClick={() => handleNewTab("mailto:manage.blablah@gmail.com")}
+									href=""
+									className="text-blue-500 underline"
+								>
 									manage.blablah@gmail.com
 								</a>
 							</p>
 							<p className="text-gray-700">
 								Created by:{" "}
-								<a href="https://x.com/ajagundeomkar" className="text-blue-500 underline">
+								<a
+									onClick={() => handleNewTab("https://x.com/ajagundeomkar")}
+									href=""
+									className="text-blue-500 underline"
+								>
 									@ajagundeomkar
+								</a>
+							</p>
+							<p className="text-gray-700">
+								Full privacy policy:{" "}
+								<a
+									onClick={() => handleNewTab("https://blablah.app/privacy-policy")}
+									href=""
+									className="text-blue-500 underline"
+								>
+									privacy-policy
 								</a>
 							</p>
 						</div>

@@ -113,6 +113,11 @@ function App() {
 		setState((prevState) => ({ ...prevState, chat: [...prevState.chat, msg] }));
 	};
 
+	const handleNewTab = (url: string) => {
+		// @ts-ignore
+		chrome.runtime.sendMessage({ action: "OPEN_NEW_TAB", data: url });
+	};
+
 	const registerUser = async (url: string) => {
 		// Register the user
 
@@ -233,6 +238,7 @@ function App() {
 			hasMoreMessages={state.hasMoreMessages}
 			handleLoadMessages={getOldMessages}
 			isChatLoading={state.isChatLoading}
+			handleNewTab={handleNewTab}
 		/>
 	);
 }

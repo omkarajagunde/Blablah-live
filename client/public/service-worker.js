@@ -125,6 +125,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 	if (message.action === "GET_URL") {
 		updateTabUrl();
 	}
+
+	if (message.action === "OPEN_NEW_TAB") {
+		chrome.tabs.create({ url: message.data });
+	}
+
 	if (message.action === "APP_READY_TO_RECEIVE_EVENT") {
 		console.log("App ready");
 		updateTabUrl();
