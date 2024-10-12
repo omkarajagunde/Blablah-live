@@ -86,6 +86,18 @@ export function ChatInterface({
 	const toggleDarkMode = () => setDarkMode(!darkMode);
 
 	useEffect(() => {
+		const handleScroll = () => {
+			if (chatRef.current) {
+				const { scrollTop, scrollHeight, clientHeight } = chatRef.current;
+				setShowScrollToBottom(scrollTop < scrollHeight - clientHeight - 100);
+			}
+		};
+
+		chatRef.current?.addEventListener("scroll", handleScroll);
+		return () => chatRef.current?.removeEventListener("scroll", handleScroll);
+	}, []);
+
+	useEffect(() => {
 		if (textareaRef.current && message.length > 0) {
 			textareaRef.current.style.height = "auto";
 			textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
@@ -212,6 +224,34 @@ export function ChatInterface({
 		setTab(tabIndex);
 	};
 
+	const convertLinksToTags = (text: string) => {
+		const urlRegex = /https?:\/\/[^\s]+/g;
+
+		const parts = text.split(urlRegex);
+		const matches = text.match(urlRegex); // Store matches here
+
+		return parts.reduce<React.ReactNode[]>((acc, part, i) => {
+			if (i === 0) return [part]; // If it's the first part, just return it
+
+			const match = matches ? matches[i - 1] : ""; // Check if matches is not null
+
+			return [
+				...acc,
+				<a
+					onClick={() => handleNewTab(match)}
+					href={match}
+					key={i}
+					className="underline text-grey-600 hover:text-grey-800"
+					target="_blank"
+					rel="noopener noreferrer"
+				>
+					{match}
+				</a>,
+				part
+			];
+		}, []);
+	};
+
 	return (
 		<div className={`flex flex-col h-screen w-full ${darkMode ? "dark" : ""}`}>
 			<div className="flex flex-col h-full bg-background text-foreground border border-border rounded-lg overflow-hidden">
@@ -296,7 +336,7 @@ export function ChatInterface({
 														{new Date(msg.updated_at).toLocaleTimeString()}
 													</span>
 												</div>
-												<p className="mt-1 text-sm break-all">{msg.message}</p>
+												<p className="mt-1 text-sm break-all">{convertLinksToTags(msg.message)}</p>
 												{msg.sticker && <img src={msg.sticker} alt="Sticker" className="mt-2 max-w-[200px] rounded" />}
 											</div>
 											<div className="flex items-center flex-wrap">
