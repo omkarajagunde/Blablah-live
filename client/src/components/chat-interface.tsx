@@ -513,7 +513,7 @@ export function ChatInterface({
 							<h3 className="font-semibold mb-2">Creator's Note</h3>
 							<p className="text-gray-700 mb-4">
 								This plugin is purely created as an individual side project, so please do not expect any guarantees or
-								warranties of this software. All messages are deleted by default after 7 days
+								warranties of this software. All messages are deleted by default after 7 days.
 							</p>
 
 							<h3 className="font-semibold mb-2">Freedom of Speech</h3>
@@ -556,16 +556,6 @@ export function ChatInterface({
 									className="text-blue-500 underline"
 								>
 									@ajagundeomkar
-								</a>
-							</p>
-							<p className="text-gray-700">
-								Full privacy policy:{" "}
-								<a
-									onClick={() => handleNewTab("https://blablah.app/privacy-policy")}
-									href=""
-									className="text-blue-500 underline"
-								>
-									privacy-policy
 								</a>
 							</p>
 						</div>

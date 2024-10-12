@@ -1,8 +1,8 @@
 {
 	"manifest_version": 3,
-	"name": "Blablah chat: Realtime live chat on every internet url",
+	"name": "Blablah Chatnet: Realtime live chat on all websites",
 	"version": "1.0",
-	"description": "Realtime live chat on every internet url",
+	"description": "Realtime live chat on all websites",
 	"icons": {
 		"16": "logo.png",
 		"48": "logo.png",
