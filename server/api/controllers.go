@@ -304,9 +304,29 @@ func (c *ChatController) AddRemoveReactions(ctx *fiber.Ctx) error {
 
 // ReportMessage handles reporting a message for inappropriate content
 func (c *ChatController) ReportMessage(ctx *fiber.Ctx) error {
+
+	userId := ctx.Get("X-Id", "")
+	msgId := ctx.Params("MessageId", "")
+
+	if userId == "" || msgId == "" {
+		return ctx.Status(400).JSON(fiber.Map{
+			"message": "User id/ Message id not passed",
+			"status":  400,
+		})
+	}
+
+	updatedRecord, updateErr := models.ReportMessage(msgId, userId)
+	if updateErr != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  fiber.StatusInternalServerError,
+			"message": updateErr,
+		})
+	}
+
 	return ctx.Status(200).JSON(fiber.Map{
 		"message": "Message reported successfully",
 		"status":  200,
+		"data":    updatedRecord,
 	})
 }
 
