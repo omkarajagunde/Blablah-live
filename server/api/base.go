@@ -23,6 +23,8 @@ func SetupRoutes(router fiber.Router) {
 	// Get previous messages of a site:channel, messageId=<> limit=50
 	router.Get("/messages", RateLimit(C.Tier2, 0), controller.GetMessages)
 
+	router.Get("/message/:_id", RateLimit(C.Tier2, 0), controller.GetMessage)
+
 	// Add reactions/emojis to a message
 	router.Post("/react/:MessageId", RateLimit(C.Tier2, 0), controller.AddRemoveReactions)
 

@@ -163,6 +163,27 @@ func FlagMessage(messageID primitive.ObjectID, userID interface{}) (*mongo.Updat
 	return result, nil
 }
 
+func GetSingleMessage(id string) (MessageModel, bool) {
+	filter := bson.M{}
+
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		fmt.Println("Invalid ObjectID:", err)
+	}
+	filter["_id"] = bson.M{"$lt": objectID}
+
+	var message MessageModel
+	err = messageService.Collection.FindOne(messageService.ctx, filter).Decode(&message)
+	if err != nil {
+		log.Fatal("Message not found:", err)
+		return message, false
+	}
+
+	// Print the result
+	fmt.Println("Message found:", id)
+	return message, true
+}
+
 // GetLast50Messages returns the last 50 messages for a specific channel, starting from a given message ID
 func GetMessages(limit int64, channel string, bookmarkID string) ([]MessageModel, string, bool, error) {
 

@@ -181,6 +181,49 @@ func (c *ChatController) GetChannelMetadata(ctx *fiber.Ctx) error {
 	})
 }
 
+// get a single message by id
+func (c *ChatController) GetMessage(ctx *fiber.Ctx) error {
+
+	userId := ctx.Get("X-Id", "")
+	msgId := ctx.Params("_id", "")
+
+	if userId == "" {
+		return ctx.Status(400).JSON(fiber.Map{
+			"message": "User id not passed",
+			"status":  400,
+		})
+	}
+
+	if msgId == "" {
+		return ctx.Status(400).JSON(fiber.Map{
+			"message": "Message id not passed",
+			"status":  400,
+		})
+	}
+
+	_, isErr := models.GetUser(userId)
+	if isErr {
+		return ctx.Status(500).JSON(fiber.Map{
+			"status":  500,
+			"message": "User not found, for passed user id!",
+			"code":    "USER_NOT_FOUND",
+		})
+	}
+
+	message, exists := models.GetSingleMessage(msgId)
+	if !exists {
+		return ctx.Status(500).JSON(fiber.Map{
+			"message": "No message found for the given id",
+			"status":  500,
+		})
+	}
+	return ctx.Status(200).JSON(fiber.Map{
+		"message": "Message retrieved successfully",
+		"status":  200,
+		"data":    message,
+	})
+}
+
 // GetMessages retrieves a list of messages
 func (c *ChatController) GetMessages(ctx *fiber.Ctx) error {
 
