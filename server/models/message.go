@@ -172,7 +172,7 @@ func GetSingleMessage(id string, siteId string) (MessageModel, bool) {
 	if err != nil {
 		fmt.Println("Invalid ObjectID:", err)
 	}
-	filter["_id"] = bson.M{"$lt": objectID}
+	filter["_id"] = objectID
 
 	var message MessageModel
 	err = messageService.Collection.FindOne(messageService.ctx, filter).Decode(&message)
