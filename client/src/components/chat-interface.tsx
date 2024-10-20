@@ -18,7 +18,9 @@ import {
 	ArrowDown,
 	AlertCircle,
 	SettingsIcon,
-	FileTextIcon
+	FileTextIcon,
+	EyeOff,
+	Eye
 } from "lucide-react";
 import axios from "axios";
 import { ChatMessage, getItemFromChromeStorage } from "@/lib/utils";
@@ -69,6 +71,9 @@ export function ChatInterface({
 	handleNewTab: Function;
 }) {
 	const [darkMode, setDarkMode] = useState(true);
+	const [showFlaggedContent, setShowFlaggedContent] = useState<{
+		[key: string]: any; // Allows any string key
+	}>({});
 	const [tab, setTab] = useState<Number>(1);
 	const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
 	const [usersCount, setUsersCount] = useState(0);
@@ -165,7 +170,7 @@ export function ChatInterface({
 					From: { Id: String(userId), Username: myProfile["Username"] },
 					To: (replyTo && replyTo._id) || "",
 					Reactions: {},
-					Flagged: [],
+					Flagged: {},
 					Message: message,
 					ChannelId: currentURL
 				};
@@ -185,6 +190,8 @@ export function ChatInterface({
 					to: messageObj.To,
 					reactions: messageObj.Reactions
 				});
+				setReplyTo(null);
+				scrollToBottom("bottom");
 			}
 		} catch (error) {
 			console.log(error);
@@ -221,6 +228,19 @@ export function ChatInterface({
 		setTab(tabIndex);
 	};
 
+	const handleReportMessage = async () => {
+		let userId = await getItemFromChromeStorage("user_id");
+		try {
+			setHoveredMessage(null);
+			const headers: { [key: string]: string } = {};
+			if (userId && hoveredMessage) {
+				// @ts-ignore
+				headers["X-Id"] = userId;
+				await axios.post(`${import.meta.env.VITE_BASE_URL}/report/${hoveredMessage}`, {}, { headers });
+			}
+		} catch (error) {}
+	};
+
 	const convertLinksToTags = (text: string) => {
 		const urlRegex = /https?:\/\/[^\s]+/g;
 
@@ -247,6 +267,10 @@ export function ChatInterface({
 				part
 			];
 		}, []);
+	};
+
+	const toggleFlaggedContent = (messageId: string) => {
+		setShowFlaggedContent((prev) => ({ ...prev, [messageId]: !prev[messageId] }));
 	};
 
 	return (
@@ -330,14 +354,69 @@ export function ChatInterface({
 												<div className="flex items-center justify-between">
 													<span className="font-semibold">{msg.from.Username}</span>
 													<span className="text-xs text-muted-foreground">
-														{new Date(msg.updated_at).toLocaleTimeString()}
+														{new Date(msg.updated_at).toLocaleString("en-US", {
+															weekday: "short", // Mon
+															year: "numeric", // 2024
+															month: "short", // Oct
+															day: "numeric", // 24
+															hour: "numeric", // 4 PM
+															minute: "numeric", // Optional if you don't want minutes
+															hour12: true // 12-hour format with AM/PM
+														})}
 													</span>
 												</div>
 												{msg.to && msg.to !== "" && <RepliedMessage _id={msg.to} channel={currentURL || ""} />}
-												<p className="mt-1 text-sm break-all">{convertLinksToTags(msg.message)}</p>
+												<p
+													className={`mt-1 text-sm break-all ${
+														msg.flagged && msg.flagged["FLAG_CODE_1"] && !showFlaggedContent[msg._id] ? "blur-sm" : ""
+													}`}
+												>
+													{convertLinksToTags(msg.message)}
+												</p>
+												{msg.flagged && msg.flagged["FLAG_CODE_1"] && (
+													<div className="flex items-center mt-2 mb-1">
+														<Flag strokeWidth={1} className="h-4 w-4 text-red-500 mr-1" />
+														<TooltipProvider>
+															<Tooltip>
+																<TooltipTrigger asChild>
+																	<Button
+																		variant="link"
+																		className="p-0 h-auto font-normal text-left text-red-600 dark:text-red-400 text-xs font-thin"
+																	>
+																		{msg.flagged["FLAG_CODE_1"].length} user(s) flagged this message
+																	</Button>
+																</TooltipTrigger>
+																<TooltipContent side="bottom" align="start" className="max-w-xs">
+																	Users find this message inappropriate
+																</TooltipContent>
+															</Tooltip>
+														</TooltipProvider>
+													</div>
+												)}
 												{msg.sticker && <img src={msg.sticker} alt="Sticker" className="mt-2 max-w-[200px] rounded" />}
 											</div>
 											<div className="flex items-center flex-wrap">
+												{msg.flagged && msg.flagged["FLAG_CODE_1"] && (
+													<Button
+														variant="secondary"
+														size="sm"
+														className="text-xs mr-1 mt-1 w-[80px]"
+														onClick={() => toggleFlaggedContent(msg._id)}
+													>
+														{showFlaggedContent[msg._id] ? (
+															<>
+																<EyeOff className="h-4 w-4 mr-1" />
+																Hide
+															</>
+														) : (
+															<>
+																<Eye className="h-4 w-4 mr-1" />
+																Show
+															</>
+														)}
+													</Button>
+												)}
+
 												{Object.entries(msg.reactions).map(([emoji, count]: [any, any]) => (
 													<Button
 														key={emoji}
@@ -390,7 +469,7 @@ export function ChatInterface({
 												<TooltipProvider>
 													<Tooltip>
 														<TooltipTrigger asChild>
-															<Button variant="ghost" size="sm">
+															<Button onClick={handleReportMessage} variant="ghost" size="sm">
 																<Flag className="h-4 w-4 text-red-500" />
 															</Button>
 														</TooltipTrigger>

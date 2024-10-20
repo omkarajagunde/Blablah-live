@@ -23,16 +23,28 @@ function RepliedMessage({ _id, channel }: { _id: string; channel: string | "" })
 				let response = await axios.get(`${import.meta.env.VITE_BASE_URL}/message/${_id}?SiteId=${channel}`, {
 					headers
 				});
-				console.log("getMessage -- ", response);
-				setState((prevState) => ({ ...prevState, isLoading: false }));
+				let msg = response.data.data;
+				setState((prevState) => ({
+					...prevState,
+					isLoading: false,
+					message: {
+						...msg,
+						message: msg.Message
+					}
+				}));
 			}
 		} catch (error) {}
 	};
 
 	return (
 		<div className="mt-1 pl-2 border-l-2 border-primary">
-			<p className="text-xs text-muted-foreground">{state.isLoading && "Loading..."}</p>
-			<p className="text-sm">{state.isLoading && "Loading..."}.</p>
+			<p className="text-xs text-muted-foreground">
+				{state.isLoading && "Loading username..."}{" "}
+				{!state.isLoading && state.message && `Reply to @${state.message.from.Username}`}
+			</p>
+			<p className="text-sm text-muted-foreground mt-2 font-thin">
+				{state.isLoading && "Loading message..."} {!state.isLoading && state.message && state.message.message}
+			</p>
 		</div>
 	);
 }
