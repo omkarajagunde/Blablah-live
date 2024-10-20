@@ -27,6 +27,7 @@ import { Skeleton } from "./ui/skeleton";
 import { Label } from "./ui/label";
 import { Switch } from "./ui/switch";
 import { Separator } from "./ui/separator";
+import RepliedMessage from "./RepliedMessage";
 
 const emojis = ["😀", "😂", "😍", "🤔", "👍", "👎", "❤️", "🎉", "🔥", "👀"];
 const emojiNames = [
@@ -120,7 +121,7 @@ export function ChatInterface({
 
 	useEffect(() => {
 		let interval = setInterval(() => {
-			axios.get(`https://blablah-live-production.up.railway.app/metadata?SiteId=${currentURL}`).then((resp: any) => {
+			axios.get(`${import.meta.env.VITE_BASE_URL}/metadata?SiteId=${currentURL}`).then((resp: any) => {
 				setUsersCount(resp.data.live);
 			});
 		}, 5000);
@@ -162,14 +163,14 @@ export function ChatInterface({
 					Timestamp: new Date().toISOString(),
 					// @ts-ignore
 					From: { Id: String(userId), Username: myProfile["Username"] },
-					To: "",
+					To: (replyTo && replyTo._id) || "",
 					Reactions: {},
 					Flagged: [],
 					Message: message,
 					ChannelId: currentURL
 				};
 				let response = await axios.post(
-					`https://blablah-live-production.up.railway.app/send?SiteId=${currentURL}`,
+					`${import.meta.env.VITE_BASE_URL}/send?SiteId=${currentURL}`,
 					{ ...messageObj },
 					{ headers }
 				);
@@ -211,11 +212,7 @@ export function ChatInterface({
 			if (userId && hoveredMessage) {
 				// @ts-ignore
 				headers["X-Id"] = userId;
-				await axios.post(
-					`https://blablah-live-production.up.railway.app/react/${hoveredMessage}`,
-					{ emoji },
-					{ headers }
-				);
+				await axios.post(`${import.meta.env.VITE_BASE_URL}/react/${hoveredMessage}`, { emoji }, { headers });
 			}
 		} catch (error) {}
 	};
@@ -336,6 +333,7 @@ export function ChatInterface({
 														{new Date(msg.updated_at).toLocaleTimeString()}
 													</span>
 												</div>
+												{msg.to && msg.to !== "" && <RepliedMessage _id={msg.to} channel={currentURL || ""} />}
 												<p className="mt-1 text-sm break-all">{convertLinksToTags(msg.message)}</p>
 												{msg.sticker && <img src={msg.sticker} alt="Sticker" className="mt-2 max-w-[200px] rounded" />}
 											</div>

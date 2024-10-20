@@ -186,6 +186,7 @@ func (c *ChatController) GetMessage(ctx *fiber.Ctx) error {
 
 	userId := ctx.Get("X-Id", "")
 	msgId := ctx.Params("_id", "")
+	siteId := ctx.Query("SiteId")
 
 	if userId == "" {
 		return ctx.Status(400).JSON(fiber.Map{
@@ -210,7 +211,7 @@ func (c *ChatController) GetMessage(ctx *fiber.Ctx) error {
 		})
 	}
 
-	message, exists := models.GetSingleMessage(msgId)
+	message, exists := models.GetSingleMessage(msgId, siteId)
 	if !exists {
 		return ctx.Status(500).JSON(fiber.Map{
 			"message": "No message found for the given id",

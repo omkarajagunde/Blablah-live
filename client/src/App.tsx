@@ -128,15 +128,11 @@ function App() {
 			if (userId) {
 				// @ts-ignore
 				headers["X-Id"] = userId;
-				await axios.post(
-					`https://blablah-live-production.up.railway.app/update/user?IsOnline=true&SiteId=${url}`,
-					{},
-					{ headers }
-				);
+				await axios.post(`${import.meta.env.VITE_BASE_URL}/update/user?IsOnline=true&SiteId=${url}`, {}, { headers });
 			}
 
 			if (!userId) {
-				let response = await axios.post(`https://blablah-live-production.up.railway.app/register?SiteId=${url}`);
+				let response = await axios.post(`${import.meta.env.VITE_BASE_URL}/register?SiteId=${url}`);
 				setItemInChromeStorage("user_id", response.data.id);
 				setItemInChromeStorage("profile", JSON.parse(response.data.data));
 				// Create new socket connection...
@@ -158,7 +154,7 @@ function App() {
 			headers["X-Id"] = userId;
 			axios
 				.get(
-					`https://blablah-live-production.up.railway.app/messages?SiteId=${url || state.currentURL}&Bookmark=${
+					`${import.meta.env.VITE_BASE_URL}/messages?SiteId=${url || state.currentURL}&Bookmark=${
 						isBookmark ? "" : state.nextBookmark
 					}`,
 					{

@@ -163,8 +163,10 @@ func FlagMessage(messageID primitive.ObjectID, userID interface{}) (*mongo.Updat
 	return result, nil
 }
 
-func GetSingleMessage(id string) (MessageModel, bool) {
-	filter := bson.M{}
+func GetSingleMessage(id string, siteId string) (MessageModel, bool) {
+	filter := bson.M{
+		"channel": siteId,
+	}
 
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
