@@ -284,11 +284,13 @@ export function ChatInterface({
 						<TabsList defaultValue="chat" className="flex w-full items-center">
 							<TabsTrigger value="chat" onClick={() => handleChangeTab(1)} className="flex-grow justify-start">
 								<div className="flex items-center">
-									<span className="relative flex h-3 w-3 mr-2">
+									<span className="relative flex h-2 w-2 mr-2">
 										<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-										<span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+										<span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
 									</span>
-									<span className="text-sm font-medium whitespace-nowrap">Live chat ({usersCount} users)</span>
+									<span className="text-sm font-medium whitespace-nowrap">
+										Live chat <span className="font-thin">({usersCount} users)</span>
+									</span>
 								</div>
 							</TabsTrigger>
 							<TabsTrigger value="settings" onClick={() => handleChangeTab(2)} className="w-10 flex justify-center">
@@ -431,7 +433,7 @@ export function ChatInterface({
 											</div>
 										</div>
 										{hoveredMessage === msg._id && (
-											<div className="absolute right-0 bottom-2 flex items-center space-x-1 bg-background/80 backdrop-blur-sm rounded p-1">
+											<div className="absolute right-0 top-4 flex items-center space-x-1 bg-background/80 backdrop-blur-sm rounded p-1">
 												<Popover>
 													<PopoverTrigger asChild>
 														<Button variant="ghost" size="sm">
